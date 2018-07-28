@@ -1,0 +1,7 @@
+.venv
+.eggs/
+*.egg-info
+.pytest_cache/
+.DS_Store
+.tox
+.mypy_cache/
