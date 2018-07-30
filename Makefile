@@ -12,7 +12,7 @@ except:
 webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
 endef
 export BROWSER_PYSCRIPT
-
+export PIPENV_IGNORE_VIRTUALENVS=1
 define PRINT_HELP_PYSCRIPT
 import re, sys
 
@@ -86,5 +86,5 @@ dist: clean ## builds source and wheel package
 
 install: clean ## install the package to the active Python's site-packages
 	# python setup.py install
-	pipenv --rm
+	# pipenv --rm
 	pipenv install --dev --pre -e .
