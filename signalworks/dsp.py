@@ -10,7 +10,7 @@ from numpy.fft import fft, ifft, rfft, irfft
 from scipy import signal, stats
 import numba
 
-from signalworks.tracking import tracking
+from signalworks.tracking import tracking, wave
 
 # TODO: make this "tracking"-free (?), and all times are in samples
 
@@ -80,7 +80,7 @@ def segment(x, nsize, nrate):
 
 
 def frame(
-    wav: tracking.Wave, frame_size: float, frame_rate: float
+    wav: wave.Wave, frame_size: float, frame_rate: float
 ) -> tracking.TimeValue:
     """
     Given a waveform, return a timeValue track with each frame as the value and times of the center of each frame.
@@ -172,11 +172,11 @@ def spectral_subtract(inp, frame_rate, silence_percentage: int):
     Y = M * np.exp(1j * np.angle(X))  # DEBUG
     y = ifft(Y).real
     s = ola(y, inp.fs, inp.duration, frame_rate * 2, frame_rate)
-    return tracking.Wave(s, inp.fs)
+    return wave.Wave(s, inp.fs)
 
 
 def spectrogram(
-    wav: tracking.Wave,
+    wav: wave.Wave,
     frame_size: float,
     frame_rate: float,
     window=signal.hann,
@@ -201,7 +201,7 @@ def spectrogram(
 
 
 def spectrogram_centered(
-    wav: tracking.Wave,  # used by rendering
+    wav: wave.Wave,  # used by rendering
     frame_size: float,
     time: np.ndarray,
     window=signal.hann,
@@ -244,7 +244,7 @@ def correlate_fft(X: np.ndarray):
 
 
 def correlogram(
-    wav: tracking.Wave, frame_size: float, frame_rate: float, normalize: bool = True
+    wav: wave.Wave, frame_size: float, frame_rate: float, normalize: bool = True
 ):
     assert wav.dtype == np.float64
     # t, x = frame(wav, frame_size, frame_rate)
