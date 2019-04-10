@@ -22,7 +22,7 @@ from collections import Iterable
 
 import numpy
 from scipy.io.wavfile import read as wav_read, write as wav_write
-from signalworks.tracking.wave import Wave
+from signalworks.tracking import Wave
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
