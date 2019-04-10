@@ -1,5 +1,5 @@
 import os
-from signalworks.tracking.tracking import Track, MultiChannelError
+from signalworks.tracking import Track, MultiChannelError
 
 import numpy
 from scipy.io.wavfile import read as wav_read, write as wav_write
