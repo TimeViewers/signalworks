@@ -29,7 +29,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-venv clean-precommit clean-mypy ## remove all build, test, coverage and Python artifacts
+
+clean-precommit:
+	pipenv run pre-commit clean
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -50,8 +53,19 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 
+clean-mypy:
+	rm -rf .mypy_cache
+
+clean-venv:
+	rm -rf .venv
+
 lint: ## check style with flake8
 	pipenv run flake8 signalworks tests
+
+requirements:
+	# Freeze requirements for applications
+	pipenv lock -r | tee requirements.txt > /dev/null
+	pipenv lock -r --dev | tee requirements-dev.txt > /dev/null
 
 test: ## run tests quickly with the default Python
 	pipenv run pytest
@@ -84,7 +98,17 @@ dist: clean ## builds source and wheel package
 	pipenv run python setup.py bdist_wheel
 	ls -l dist
 
-install: clean ## install the package to the active Python's site-packages
-	# python setup.py install
-	# pipenv --rm
-	pipenv install --dev --pre -e .
+style: black isort
+
+black:
+	pipenv run black .
+
+isort:
+	pipenv run isort -y
+
+format: style
+
+install: clean requirements## install the package to the active Python's site-packages
+	pipenv install --dev .
+	pipenv run pre-commit install
+	pipenv run pre-commit autoupdate
