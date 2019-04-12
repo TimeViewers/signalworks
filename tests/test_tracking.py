@@ -3,7 +3,7 @@ import pytest  # noqa: F401
 
 import numpy as np
 
-from signalworks.tracking import Wave
+from signalworks.tracking.wave import Wave
 from signalworks import dsp
 
 

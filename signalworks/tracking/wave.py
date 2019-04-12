@@ -1,10 +1,13 @@
 import os
-from signalworks.tracking import Track, MultiChannelError
+from pathlib import Path
 
 import numpy
 from scipy.io.wavfile import read as wav_read, write as wav_write
 
-class Wave(Track):
+from signalworks.tracking.metatrack import MetaTrack
+from signalworks.tracking.error import MultiChannelError
+
+class Wave(MetaTrack):
     """monaural waveform"""
 
     default_suffix = ".wav"
@@ -12,7 +15,10 @@ class Wave(Track):
     def __init__(
         self, value: numpy.ndarray, fs, duration=None, offset=0, path=None
     ) -> None:
-        super().__init__(path)
+        super().__init__()
+        if path is None:
+            path = str(id(self))
+        self.path = Path(path).with_suffix(self.default_suffix)
         assert isinstance(value, numpy.ndarray)
         assert 1 <= value.ndim, "only a single channel is supported"
         assert isinstance(fs, int)
@@ -63,6 +69,14 @@ class Wave(Track):
             self._duration = len(self._value)
 
     value = property(get_value, set_value)
+
+    def get_fs(self):
+        return self._fs
+
+    def set_fs(self, _value):
+        raise Exception("Cannot change fs, try resample()")
+
+    fs = property(get_fs, set_fs, doc="sampling frequency")
 
     def get_duration(self):
         return self._duration
