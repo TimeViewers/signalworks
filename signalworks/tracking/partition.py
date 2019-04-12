@@ -412,7 +412,7 @@ class Partition(MetaTrack):
         )  # other._time[0] == 0
         value = numpy.hstack((self._value, other._value))
         # duration = self.duration + other.duration
-        return Partition(time, value, self._fs)
+        return Partition(time, value, self.fs)
 
     def crossfade(self, partition, length):
         """append to self, using a crossfade of a specified length in samples"""
