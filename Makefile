@@ -29,7 +29,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test clean-venv ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-venv clean-precommit clean-mypy ## remove all build, test, coverage and Python artifacts
+
+clean-precommit:
+	pipenv run pre-commit clean
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -49,6 +52,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
+
+clean-mypy:
+	rm -rf .mypy_cache
 
 clean-venv:
 	rm -rf .venv
@@ -105,4 +111,6 @@ foromat: style
 install: clean requirements## install the package to the active Python's site-packages
 	# python setup.py install
 	# pipenv --rm
+	pipenv run pre-commit install
+	pipenv run pre-commit autoupdate
 	pipenv install --dev .
