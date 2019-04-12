@@ -106,11 +106,9 @@ black:
 isort:
 	pipenv run isort -y
 
-foromat: style
+format: style
 
 install: clean requirements## install the package to the active Python's site-packages
-	# python setup.py install
-	# pipenv --rm
+	pipenv install --dev .
 	pipenv run pre-commit install
 	pipenv run pre-commit autoupdate
-	pipenv install --dev .
