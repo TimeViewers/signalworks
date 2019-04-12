@@ -10,7 +10,8 @@ from numpy.fft import fft, ifft, rfft, irfft
 from scipy import signal, stats
 import numba
 
-from signalworks.tracking import tracking, wave
+from signalworks.tracking import tracking
+from signalworks.tracking import wave
 
 # TODO: make this "tracking"-free (?), and all times are in samples
 
