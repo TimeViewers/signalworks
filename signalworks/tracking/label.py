@@ -93,6 +93,14 @@ class Label(MetaTrack):
 
     duration = property(get_duration, set_duration, doc="duration of track")
 
+    def get_fs(self):
+        return self._fs
+
+    def set_fs(self, _value):
+        raise Exception("Cannot change fs, try resample()")
+
+    fs = property(get_fs, set_fs, doc="sampling frequency")
+
     def __str__(self):
         # s = [u"0"]
         # for i in range(len(self._value)):
@@ -120,7 +128,7 @@ class Label(MetaTrack):
         )  # other._time[0] == 0
         value = numpy.hstack((self._value, other._value))
         duration = self.duration + other.duration
-        return Label(time, value, self._fs, duration)
+        return Label(time, value, self.fs, duration)
 
     def __len__(self):
         return len(self._value)
