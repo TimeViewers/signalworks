@@ -14,11 +14,17 @@ def read(fname: str) -> List[str]:
 
 def read_requirements(fname: str) -> List[str]:
     contents = read(fname)[1:]
-    for index, requirement in enumerate(contents):
+    filtered = []
+    for requirement in contents:
         if requirement.startswith("git+"):
             _, _, pkg_name = requirement.rpartition("=")
-            contents[index] = pkg_name + "@" + requirement
-    return contents
+            requirement = pkg_name + "@" + requirement
+        elif requirement.startswith("-i"):
+            continue
+        elif requirement.endswith("."):
+            continue
+    filtered.append(requirement)
+    return filtered
 
 
 with open("README.rst") as readme_file:
@@ -41,7 +47,7 @@ setup(
     ],
     description="Library to handle signal data and perform signal processing computations",
     entry_points={"console_scripts": ["signalworks=signalworks.cli:main"]},
-    install_requires=read_requirements("requirements.txt"),
+    install_requires=["numpy", "scipy", "numba"],
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
@@ -50,7 +56,6 @@ setup(
     packages=find_packages(include=["signalworks"]),
     setup_requires=["pytest-runner"],
     test_suite="tests",
-    tests_require=read_requirements("requirements-dev.txt"),
     url="https://github.com/lxkain/signalworks",
     version="0.1.0",
     zip_safe=False,
