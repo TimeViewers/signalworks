@@ -57,18 +57,13 @@ clean-mypy:
 	rm -rf .mypy_cache
 
 clean-venv:
-	rm -rf .venv
+	pipenv --rm
 
 lint: ## check style with flake8
 	pipenv run flake8 signalworks tests
 
-requirements:
-	# Freeze requirements for applications
-	pipenv lock -r | tee requirements.txt > /dev/null
-	pipenv lock -r --dev | tee requirements-dev.txt > /dev/null
-
 test: ## run tests quickly with the default Python
-	pipenv run pytest
+	pipenv run python setup.py test
 
 test-all: ## run tests on every Python version with tox
 	pipenv run tox
@@ -108,7 +103,8 @@ isort:
 
 format: style
 
-install: clean requirements## install the package to the active Python's site-packages
+install: clean ## install the package to the active Python's site-packages
 	pipenv install --dev .
+	pipenv run pip install -e .
 	pipenv run pre-commit install
 	pipenv run pre-commit autoupdate
