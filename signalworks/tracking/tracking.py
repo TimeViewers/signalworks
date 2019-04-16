@@ -10,29 +10,21 @@ Each track has a fs and a duration. There are 4 kinds of tracks:
 All track intervals are of the type [), and duration points to the next unoccupied sample == length
 """
 
-import abc
-import codecs
-import contextlib
 import logging
-import os
 from builtins import str
 from pathlib import Path
 from typing import List
-from collections import Iterable
 
 import numpy
-from scipy.io.wavfile import read as wav_read, write as wav_write
-from signalworks.tracking.wave import Wave
 from signalworks.tracking.metatrack import MetaTrack
 from signalworks.tracking.partition import Partition
 from signalworks.tracking.timevalue import TimeValue
+from signalworks.tracking.wave import Wave
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 # logger.setLevel(logging.WARNING)
 # logger.setLevel(logging.ERROR)
-
-__all__ = ["Track", "Label", "Value"]
 
 TIME_TYPE = numpy.int64
 
@@ -85,6 +77,7 @@ def convert_dtype(source, target_dtype):
                     return (source * (1 << 15)).astype(target_dtype)  # dither?
                 else:  # target_dtype == numpy.int32
                     return (source * (1 << 31)).astype(target_dtype)  # dither?
+
 
 class Track(MetaTrack):
     default_suffix = ".trk"
@@ -148,12 +141,14 @@ class Track(MetaTrack):
         raise NotImplementedError
 
     @classmethod
-    def read(cls, path, *args, **kwargs):
+    def read(cls, path):
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix
         if suffix == ".wav":
-            return Wave.wav_read(path)
+            channels = None
+            mmap = False
+            return Wave.wav_read(path, channels, mmap)
         elif suffix == ".tmv":
             return TimeValue.read_tmv(path)  # for now, handle nans
         elif suffix == ".lab":

@@ -1,6 +1,7 @@
 import abc
-class MetaTrack(metaclass=abc.ABCMeta):
 
+
+class MetaTrack(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def get_duration(self):
         raise NotImplementedError

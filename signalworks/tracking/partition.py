@@ -1,18 +1,19 @@
+import codecs
 import logging
 import os
-import codecs
 from pathlib import Path
 
 import numpy
-
-from signalworks.tracking.metatrack import MetaTrack
 from signalworks.tracking.error import LabreadError
+from signalworks.tracking.metatrack import MetaTrack
+
 # from signalworks.tracking.timevalue import TimeValue
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 TIME_TYPE = numpy.int64
+
 
 class Partition(MetaTrack):
     default_suffix = ".lab"
@@ -213,25 +214,27 @@ class Partition(MetaTrack):
             raise ValueError("file '{}' has unknown format".format(name))
 
     @classmethod
-    def read_lab(cls, name, fs=300_000, encoding="UTF8"):
+    def read_lab(
+        cls, name: str, fs: int = 300_000, encoding: str = "UTF8"
+    ) -> "Partition":
         """load times, values from a label file"""
         with codecs.open(name, "r", encoding=encoding) as f:
             lines = f.readlines()
         if len(lines) == 0:
             raise ValueError("file '{}' is empty".format(name))
-        time = []
-        value = []
+        time: list = []
+        value: list = []
         # label_type = numpy.float64
         for i, line in enumerate(lines):
             try:
-                t1, t2, label = line[:-1].split()
+                tmp1, tmp2, label = line[:-1].split()
             except ValueError:
                 logger.warning(
                     'ignoring line "%s" in file %s at line %i' % (line, name, i + 1)
                 )
                 continue
-            t1 = float(t1)
-            t2 = float(t2)
+            t1 = float(tmp1)
+            t2 = float(tmp2)
             if label[-1] == "\r":
                 label = label[:-1]
             if len(time) == 0:
@@ -280,18 +283,18 @@ class Partition(MetaTrack):
             lines = f.readlines()
         if len(lines) == 0:
             raise ValueError("file '{}' is empty".format(name))
-        time = [0]
+        time = [0.0]
         value = []
         label_type = numpy.float64
         for i, line in enumerate(lines):
             try:
-                t, _t, label = line[:-1].split()
+                temp, _t, label = line[:-1].split()
             except ValueError:
                 logger.warning(
                     'ignoring line "%s" in file %s at line %i' % (line, name, i + 1)
                 )
                 continue
-            t = float(t)
+            t = float(temp)
             if label[-1] == "\r":
                 label = label[:-1]
             try:
@@ -359,7 +362,7 @@ class Partition(MetaTrack):
         f = open(name, "w")
         f.write("#\n")
         for i, v in enumerate(self._value):
-            f.write("%f 125 %s\n" % (self.fs, self._time[i + 1] / self.fs, v))
+            f.write(f"{self._time[i + 1] / self.fs} 125 {v}\n")
         f.close()
 
     @classmethod
@@ -401,8 +404,7 @@ class Partition(MetaTrack):
                     self._time[i + 1] / self._fs,
                 )
             )
-        s = "".join(s)
-        return "%s\nfs=%i\nduration=%i" % (s, self._fs, self.duration)
+        return f"{''.join(s)}\nfs={self._fs}\nduration={self.duration}"
 
     def __add__(self, other):
         if self._fs != other._fs:
@@ -444,7 +446,7 @@ class Partition(MetaTrack):
             (self._value, value)
         )  # so values must be numpy objects after all ?
 
-    def insert(self, time: int, value):
+    def insert(self, time: float, value: str) -> None:
         """modifies partition object to include value at time - other times are unchanged"""
         assert not (time == self._time).any(), "this boundary exists already"
         index = numpy.searchsorted(self._time, numpy.array([time]))[

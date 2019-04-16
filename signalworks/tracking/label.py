@@ -1,15 +1,15 @@
 import logging
 from pathlib import Path
 
-from signalworks.tracking.metatrack import MetaTrack
-from signalworks.tracking.error import LabreadError
-
 import numpy
+from signalworks.tracking.error import LabreadError
+from signalworks.tracking.metatrack import MetaTrack
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 TIME_TYPE = numpy.int64
+
 
 class Label(MetaTrack):
     """Like Partition, but label regions do NOT have to be contiguous"""
@@ -117,8 +117,8 @@ class Label(MetaTrack):
                     self._time[2 * i + 1] / self._fs,
                 )
             )
-        s = "".join(s)
-        return "%sfs=%i\nduration=%i" % (s, self._fs, self._duration)
+        s_ = "".join(s)
+        return "%sfs=%i\nduration=%i" % (s_, self._fs, self._duration)
 
     def __add__(self, other):
         if self._fs != other._fs:
@@ -185,14 +185,14 @@ class Label(MetaTrack):
         for i, line in enumerate(lines):
             if line != "\n":
                 try:
-                    t1, t2, label = line.split()
+                    t1_, t2_, label = line.split()
                 except ValueError:
                     logger.warning(
                         'ignoring line "%s" in file %s at line %i' % (line, path, i + 1)
                     )
                     continue
-                t1 = float(t1)  # / 1000  # this particular
-                t2 = float(t2)  # / 1000  # file format
+                t1 = float(t1_)  # / 1000  # this particular
+                t2 = float(t2_)  # / 1000  # file format
                 if label[-1] == "\r":
                     label = label[:-1]
                 dur = t2 - t1

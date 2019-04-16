@@ -1,15 +1,17 @@
-import numpy
-
-from signalworks.tracking.metatrack import MetaTrack
-
 import os
 from pathlib import Path
 
+import numpy
+from signalworks.tracking.metatrack import MetaTrack
+
 TIME_TYPE = numpy.int64
+
 
 class Value(MetaTrack):
     """can store a singular value (e.g. comment string) of any type"""
+
     default_suffix = ".trk"
+
     def __init__(self, value, fs, duration, path=None):
         super().__init__()
         if path is None:
@@ -106,7 +108,7 @@ class Value(MetaTrack):
             with open(name, "r") as f:
                 value = f.read()
                 if ext == ".search":
-                    value = str(value, "UTF-8")
+                    value = str(value)  # , "UTF-8")
                 self = Value(value, fs, duration)
         elif ext == ".pron":
             with open(name, "r") as f:
