@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import NamedTuple, Optional, Tuple
 
-from numpy import np
+import numpy as np
 from scipy import signal
 from signalworks.processors.processing import DefaultProgressTracker, Processor
 from signalworks.tracking import Wave
