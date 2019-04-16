@@ -1,16 +1,16 @@
-import os
 import logging
+import os
 from collections import Iterable
 
+import numpy
 from signalworks.tracking.metatrack import MetaTrack
 from signalworks.tracking.partition import Partition
-
-import numpy
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 TIME_TYPE = numpy.int64
+
 
 class TimeValue(MetaTrack):
     def __init__(self, time, value, fs, duration, path=None):

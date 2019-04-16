@@ -1,8 +1,7 @@
+import numpy
+import pytest
 from signalworks.tracking.event import Event
 
-import numpy
-
-import pytest
 
 @pytest.fixture
 def var():
@@ -10,10 +9,12 @@ def var():
     u = Event(numpy.array([0, 2], dtype=numpy.int64), 1, 3)
     return t, u
 
+
 def test_eq(var):
     t, u = var
     assert t == t
     assert not t == u
+
 
 def test_add(var):
     t, u = var
@@ -21,6 +22,7 @@ def test_add(var):
     assert v == Event(numpy.array([3, 6, 10, 12], dtype=numpy.int64), 1, 13)
     t += u
     assert t == Event(numpy.array([3, 6, 10, 12], dtype=numpy.int64), 1, 13)
+
 
 def test_select(var):
     t, u = var

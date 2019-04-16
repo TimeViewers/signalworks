@@ -57,10 +57,11 @@ clean-mypy:
 	rm -rf .mypy_cache
 
 clean-venv:
-	pipenv --rm
+	@rm -rf .venv
 
 lint: ## check style with flake8
 	pipenv run flake8 signalworks tests
+	pipenv run mypy signalworks tests
 
 test: ## run tests quickly with the default Python
 	pipenv run python setup.py test
@@ -104,7 +105,6 @@ isort:
 format: style
 
 install: clean ## install the package to the active Python's site-packages
-	pipenv install --dev .
-	pipenv run pip install -e .
+	pipenv install --dev --skip-lock .
 	pipenv run pre-commit install
 	pipenv run pre-commit autoupdate

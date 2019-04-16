@@ -1,16 +1,16 @@
-import os
-import logging
 import contextlib
+import logging
+import os
 from pathlib import Path
 
 import numpy
-
 from signalworks.tracking.metatrack import MetaTrack
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 TIME_TYPE = numpy.int64
+
 
 class Event(MetaTrack):
     def __init__(self, time, fs, duration, path=None):
@@ -247,7 +247,7 @@ class Event(MetaTrack):
 
     def write_pml(self, name):
         f = open(name, "w")
-        t1 = 0.
+        t1 = 0.0
         for t in self.time:
             t2 = t / self.fs
             f.write("%f %f .\n" % (t1, t2))

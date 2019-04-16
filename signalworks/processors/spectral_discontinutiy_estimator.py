@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
-from typing import NamedTuple, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
-
-from signalworks import tracking
 from signalworks import dsp
-from processing import Processor
+from signalworks.processors.processing import DefaultProgressTracker, Processor
+from signalworks.tracking import TimeValue, Wave
 
 
 class SpectralDiscontinuityEstimator(Processor):
     name = "Spectral Discontinuity Estimator"
-    acquire = NamedTuple("acquire", [("wave", tracking.Wave)])
+    acquire = NamedTuple("acquire", [("wave", Wave)])
 
     def __init__(self):
         super().__init__()
@@ -21,10 +20,13 @@ class SpectralDiscontinuityEstimator(Processor):
             "delta_order": 1,
         }
 
-    def process(self, progressTracker=None, **kwargs) -> Tuple[tracking.TimeValue]:
+    def process(
+        self, progressTracker: Optional[DefaultProgressTracker] = None
+    ) -> Tuple[TimeValue]:
         if progressTracker is not None:
             self.progressTracker = progressTracker
         wav = self.data.wave
+        assert isinstance(wav, Wave)
         self.progressTracker.update(10)
         ftr, time, frequency = dsp.spectrogram(
             wav,
@@ -64,13 +66,13 @@ class SpectralDiscontinuityEstimator(Processor):
             for w in range(win_length):
                 delta_array[i, :] += temp_array[i + w, :] * dynamic_win[w]
         value = np.mean(np.diff(delta_array, axis=0) ** 2, axis=1) ** 0.5
-        dis = tracking.TimeValue(
+        dis = TimeValue(
             time,
             value,
             wav.fs,
             wav.duration,
             path=wav.path.with_name(wav.path.stem + "-discont").with_suffix(
-                tracking.TimeValue.default_suffix
+                TimeValue.default_suffix
             ),
         )
         dis.min = 0

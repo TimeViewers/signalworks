@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-from .tracking import Track# noqa: F401
-from .error import MultiChannelError, LabreadError
-from .wave import Wave
-from .event import Event
-from .partition import Partition
-from .metatrack import MetaTrack
-from .timevalue import TimeValue
-from .label import Label
-from .value import Value
+from .error import LabreadError, MultiChannelError  # noqa
+from .event import Event  # noqa
+from .label import Label  # noqa
+from .metatrack import MetaTrack  # noqa
+from .partition import Partition  # noqa
+from .timevalue import TimeValue  # noqa
+from .tracking import Track  # noqa: F401
+from .value import Value  # noqa
+from .wave import Wave  # noqa

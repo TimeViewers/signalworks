@@ -1,11 +1,17 @@
+import logging
 import os
 from pathlib import Path
+from typing import Optional
 
 import numpy
-from scipy.io.wavfile import read as wav_read, write as wav_write
-
-from signalworks.tracking.metatrack import MetaTrack
+from scipy.io.wavfile import read as wav_read
+from scipy.io.wavfile import write as wav_write
 from signalworks.tracking.error import MultiChannelError
+from signalworks.tracking.metatrack import MetaTrack
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
 
 class Wave(MetaTrack):
     """monaural waveform"""
@@ -13,11 +19,19 @@ class Wave(MetaTrack):
     default_suffix = ".wav"
 
     def __init__(
-        self, value: numpy.ndarray, fs, duration=None, offset=0, path=None
+        self,
+        value: numpy.ndarray,
+        fs: int,
+        duration: int = None,
+        offset: int = 0,
+        path: str = None,
     ) -> None:
         super().__init__()
         if path is None:
             path = str(id(self))
+        self.min: Optional[int] = None
+        self.max: Optional[int] = None
+        # TODO: what happens if path is None
         self.path = Path(path).with_suffix(self.default_suffix)
         assert isinstance(value, numpy.ndarray)
         assert 1 <= value.ndim, "only a single channel is supported"
@@ -32,9 +46,10 @@ class Wave(MetaTrack):
         self.label = f"amplitude-{value.dtype}"
         if not duration:
             duration = len(self._value)
-        assert (
-            len(self._value) <= duration < len(self._value) + 1
-        ), "Cannot set duration of a wave to other than a number in " "[length, length+1), where length = len(self.value)"
+        assert len(self._value) <= duration < len(self._value) + 1, (
+            "Cannot set duration of a wave to other than a number in "
+            "[length, length+1), where length = len(self.value)"
+        )
         self._duration = duration
 
     def get_offset(self):
@@ -82,9 +97,10 @@ class Wave(MetaTrack):
         return self._duration
 
     def set_duration(self, duration):
-        assert (
-            len(self._value) <= duration < len(self._value) + 1
-        ), "Cannot set duration of a wave to other than a number in [length, length+1) " "- where length = len(self.value)"
+        assert len(self._value) <= duration < len(self._value) + 1, (
+            "Cannot set duration of a wave to other than a number in [length, length+1) "
+            "- where length = len(self.value)"
+        )
         self._duration = duration
 
     duration = property(get_duration, set_duration)
@@ -166,11 +182,60 @@ class Wave(MetaTrack):
         else:
             return self
 
+    def _convert_dtype(self, source, target_dtype):
+        """
+        return a link (if unchanged) or copy of signal in the specified dtype (often changes bit-depth as well)
+        """
+        assert isinstance(source, numpy.ndarray)
+        source_dtype = source.dtype
+        assert source_dtype in (
+            numpy.int16,
+            numpy.int32,
+            numpy.float32,
+            numpy.float64,
+        ), "source must be a supported type"
+        assert target_dtype in (
+            numpy.int16,
+            numpy.int32,
+            numpy.float32,
+            numpy.float64,
+        ), "target must be a supported type"
+        if source_dtype == target_dtype:
+            return source
+        else:  # conversion
+            if source_dtype == numpy.int16:
+                if target_dtype == numpy.int32:
+                    return source.astype(target_dtype) << 16
+                else:  # target_dtype == numpy.float32 / numpy.float64:
+                    return source.astype(target_dtype) / (1 << 15)
+            elif source_dtype == numpy.int32:
+                if target_dtype == numpy.int16:
+                    return (source >> 16).astype(target_dtype)  # lossy
+                else:  # target_dtype == numpy.float32 / numpy.float64:
+                    return source.astype(target_dtype) / (1 << 31)
+            else:  # source_dtype == numpy.float32 / numpy.float64
+                M = numpy.max(numpy.abs(source))
+                limit = 1 - 1e-16
+                if M > limit:
+                    factor = limit / M
+                    logger.warning(
+                        f"maximum float waveform value {M} is beyond [-{limit}, {limit}],"
+                        f"applying scaling of {factor}"
+                    )
+                    source *= factor
+                if target_dtype == numpy.float32 or target_dtype == numpy.float64:
+                    return source.astype(target_dtype)
+                else:
+                    if target_dtype == numpy.int16:
+                        return (source * (1 << 15)).astype(target_dtype)  # dither?
+                    else:  # target_dtype == numpy.int32
+                        return (source * (1 << 31)).astype(target_dtype)  # dither?
+
     def convert_dtype(self, target_dtype):
         """returns a new wave with the waveform in the specified target_dtype"""
         # TODO: take care of setting new min and max
         return type(self)(
-            convert_dtype(self._value, target_dtype), self._fs, path=self.path
+            self._convert_dtype(self._value, target_dtype), self._fs, path=self.path
         )
 
     def select(self, a, b):
