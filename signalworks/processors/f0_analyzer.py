@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from typing import NamedTuple, Tuple, Dict
+from typing import Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 from scipy import signal
-
-from signalworks import dsp
-from .tracking import Wave, Partition, TimeValue
-from processing import Processor, viterbi
+from signalworks import dsp, viterbi
+from signalworks.processors.processing import DefaultProgressTracker, Processor
+from signalworks.tracking import Partition, TimeValue, Wave
 
 
 class F0Analyzer(Processor):
@@ -27,7 +26,7 @@ class F0Analyzer(Processor):
             "energy threshold": 0.1,
         }
 
-    def set_parameters(self, parameter: Dict[str, str]):
+    def set_parameters(self, parameter: Dict[str, str]) -> None:
         super().set_parameters(parameter)
         assert (
             self.parameters["f0_min"] < self.parameters["f0_max"]
@@ -37,18 +36,21 @@ class F0Analyzer(Processor):
         ), "frame_size must be > 2 / f0_min"
 
     def process(
-        self, progressTracker=None, **kwargs
+        self, progressTracker: Optional[DefaultProgressTracker] = None
     ) -> Tuple[TimeValue, TimeValue, Partition]:
         if progressTracker is not None:
             self.progressTracker = progressTracker
         wav = self.data.wave
+        assert isinstance(wav, Wave)
         wav = wav.convert_dtype(np.float64)
         self.progressTracker.update(10)
+        assert isinstance(wav, Wave)
         R, time, frequency = dsp.correlogram(
             wav, self.parameters["frame_size"], self.parameters["frame_rate"]
         )
 
         self.progressTracker.update(30)
+        assert isinstance(wav, Wave)
         t0_min = int(round(wav.fs / self.parameters["f0_max"]))
         t0_max = int(round(wav.fs / self.parameters["f0_min"]))
         index = np.arange(t0_min, t0_max + 1, dtype=np.int)
