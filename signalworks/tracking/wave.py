@@ -6,6 +6,7 @@ from typing import Optional
 import numpy
 from scipy.io.wavfile import read as wav_read
 from scipy.io.wavfile import write as wav_write
+from scipy.signal import resample_poly
 from signalworks.tracking.error import MultiChannelError
 from signalworks.tracking.metatrack import MetaTrack
 
@@ -173,12 +174,10 @@ class Wave(MetaTrack):
         """resample to a certain fs"""
         assert isinstance(fs, int)
         if fs != self._fs:
-            # do this here, because multirate loading an external lib is problematic for the iOS port
-            # from pysig import multirate
-            #  import fractions
-            #  return type(self)(multirate.resample(self._value, fractions.Fraction(fs, self._fs)), fs)
-            # return type(self)(multirate.resample(self._value, self._fs, fs), fs)
-            raise NotImplementedError
+            if fs > self._fs:  # upsampling
+                return type(self)(resample_poly(self._value, int(fs / self._fs), 1), fs)
+            else:  # downsampling
+                return type(self)(resample_poly(self._value, 1, int(self._fs / fs)), fs)
         else:
             return self
 

@@ -3,6 +3,7 @@ from .error import LabreadError, MultiChannelError  # noqa
 from .event import Event  # noqa
 from .label import Label  # noqa
 from .metatrack import MetaTrack  # noqa
+from .multitrack import MultiTrack  # noqa
 from .partition import Partition  # noqa
 from .timevalue import TimeValue  # noqa
 from .tracking import Track  # noqa: F401

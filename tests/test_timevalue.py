@@ -16,6 +16,17 @@ def var():
     return t1, t2
 
 
+def test_init():
+    with pytest.raises(Exception):
+        TimeValue(
+            numpy.array([6, 3], dtype=TIME_TYPE), numpy.array([3, 6]), 1, 10
+        )  # bad times
+    with pytest.raises(Exception):
+        TimeValue(
+            numpy.array([3, 6], dtype=TIME_TYPE), numpy.array([3, 6]), 1, 5
+        )  # duration too short
+
+
 def test_eq(var):
     t1, t2, = var
     assert t1 == t1
@@ -48,4 +59,11 @@ def test_select(var):
         numpy.array([0, 4], dtype=TIME_TYPE), numpy.array([1, 4]), 1, 5
     )
     # t = t1.select(2, 5)
-    # assert t == TimeValue(numpy.array([], dtype=TIME_TYPE), numpy.array([]), 1, 3)
+    # assert t == TimeValue(numpy.array([], dtype=TIME_TYPE), numpy.array([]), 1, 3) # empty value
+
+
+def test_duration(var):
+    t1, _ = var
+    t1.duration = 11  # ok
+    with pytest.raises(Exception):
+        t1.set_duration(5)  # duration too short
