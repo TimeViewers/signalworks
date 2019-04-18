@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-from typing import NamedTuple, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
-
-from processing import Processor
-from .tracking import Wave, TimeValue, Partition
 from signalworks import dsp, viterbi
+from signalworks.processors.processing import DefaultProgressTracker, Processor
+from signalworks.tracking import Partition, TimeValue, Wave
 
 
 class ActivityDetector(Processor):
@@ -21,12 +20,16 @@ class ActivityDetector(Processor):
             "frame_rate": 0.01,
         }
 
-    def process(self, progressTracker=None, **kwargs) -> Tuple[Partition, TimeValue]:
+    def process(
+        self, progressTracker: Optional[DefaultProgressTracker] = None
+    ) -> Tuple[Partition, TimeValue]:
         if progressTracker is not None:
             self.progressTracker = progressTracker
         wav = self.data.wave
+        assert isinstance(wav, Wave)
         wav = wav.convert_dtype(np.float64)
         self.progressTracker.update(10)
+        assert isinstance(wav, Wave)
         M, time, frequency = dsp.spectrogram(
             wav, self.parameters["frame_size"], self.parameters["frame_rate"]
         )

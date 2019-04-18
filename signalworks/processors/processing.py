@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, Dict, Union, Callable, NamedTuple, Optional, Any
+from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
-
-from signalworks.tracking import Wave, Partition, TimeValue
+from signalworks.tracking import Partition, TimeValue, Wave
 
 Tracks = Union[Wave, TimeValue, Partition]
 # type alias
@@ -29,7 +28,7 @@ class ProcessError(Exception):
 
 
 class DefaultProgressTracker:
-    def update(self, value: int):
+    def update(self, value: int) -> None:
         print(f"{value}%", end="...", flush=True)
 
 
@@ -74,7 +73,9 @@ class Processor(metaclass=ABCMeta):
         # additional parameter checking can be performed here
 
     @abstractmethod
-    def process(self, progressTracker=None) -> Tuple[Tracks, ...]:
+    def process(
+        self, progressTracker: Optional[DefaultProgressTracker] = None
+    ) -> Tuple[Tracks, ...]:
         pass
 
     def del_data(self):

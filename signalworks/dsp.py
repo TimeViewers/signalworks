@@ -3,14 +3,13 @@
 Digital Signal Processing
 """
 from math import ceil, log2
-from typing import Union, Tuple
+from typing import Tuple, Union
 
-import numpy as np
-from numpy.fft import fft, ifft, rfft, irfft
-from scipy import signal, stats
 import numba
-
-from signalworks.tracking import tracking
+import numpy as np
+from numpy.fft import fft, ifft, irfft, rfft
+from scipy import signal, stats
+from signalworks.tracking import tracking, wave
 
 # TODO: make this "tracking"-free (?), and all times are in samples
 
@@ -79,9 +78,7 @@ def segment(x, nsize, nrate):
     return X
 
 
-def frame(
-    wav: tracking.Wave, frame_size: float, frame_rate: float
-) -> tracking.TimeValue:
+def frame(wav: wave.Wave, frame_size: float, frame_rate: float) -> tracking.TimeValue:
     """
     Given a waveform, return a timeValue track with each frame as the value and times of the center of each frame.
     times point to the center of the frame.
@@ -144,7 +141,9 @@ def frame_centered(signal: np.ndarray, time: np.ndarray, frame_size: int) -> np.
 
 
 @numba.jit(nopython=True, cache=True)  # we need polymorphism here
-def ola(frame, fs, duration, frame_size: float, frame_rate: float):
+def ola(
+    frame: np.ndarray, fs: int, duration: int, frame_size: float, frame_rate: float
+) -> np.ndarray:
     nsize = int(round(frame_size * fs))
     nrate = int(round(frame_rate * fs))
     y = np.zeros(duration, dtype=np.float64)
@@ -155,7 +154,9 @@ def ola(frame, fs, duration, frame_size: float, frame_rate: float):
     return y
 
 
-def spectral_subtract(inp, frame_rate, silence_percentage: int):
+def spectral_subtract(
+    inp: wave.Wave, frame_rate: int, silence_percentage: int
+) -> wave.Wave:
     assert 0 < silence_percentage < 100
     ftr = frame(inp, frame_rate * 2, frame_rate)
     x = ftr.value * signal.hann(ftr.value.shape[1])
@@ -172,16 +173,16 @@ def spectral_subtract(inp, frame_rate, silence_percentage: int):
     Y = M * np.exp(1j * np.angle(X))  # DEBUG
     y = ifft(Y).real
     s = ola(y, inp.fs, inp.duration, frame_rate * 2, frame_rate)
-    return tracking.Wave(s, inp.fs)
+    return wave.Wave(s, inp.fs)
 
 
 def spectrogram(
-    wav: tracking.Wave,
+    wav: wave.Wave,
     frame_size: float,
     frame_rate: float,
-    window=signal.hann,
-    NFFT="nextpow2",
-    normalized=False,
+    window: signal.hann = signal.hann,
+    NFFT: str = "nextpow2",
+    normalized: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """return log-magnitude spectrogram in dB"""
     ftr = frame(wav, frame_size, frame_rate)
@@ -201,12 +202,12 @@ def spectrogram(
 
 
 def spectrogram_centered(
-    wav: tracking.Wave,  # used by rendering
+    wav: wave.Wave,  # used by rendering
     frame_size: float,
     time: np.ndarray,
-    window=signal.hann,
-    NFFT="nextpow2",
-    normalized=False,
+    window: signal.hann = signal.hann,
+    NFFT: str = "nextpow2",
+    normalized: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """return log-magnitude spectrogram in dB"""
     s = wav.value / np.abs(
@@ -230,7 +231,7 @@ def spectrogram_centered(
     return M, frequency
 
 
-def correlate_fft(X: np.ndarray):
+def correlate_fft(X: np.ndarray) -> np.ndarray:
     """correlation for feature matrix"""
     assert X.ndim == 2
     D = X.shape[1]
@@ -244,8 +245,8 @@ def correlate_fft(X: np.ndarray):
 
 
 def correlogram(
-    wav: tracking.Wave, frame_size: float, frame_rate: float, normalize: bool = True
-):
+    wav: wave.Wave, frame_size: float, frame_rate: float, normalize: bool = True
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert wav.dtype == np.float64
     # t, x = frame(wav, frame_size, frame_rate)
     ftr = frame(wav, frame_size, frame_rate)

@@ -3,7 +3,7 @@ import pytest  # noqa: F401
 
 import numpy as np
 
-from signalworks.tracking import tracking
+from signalworks.tracking.wave import Wave
 from signalworks import dsp
 
 
@@ -15,7 +15,7 @@ def test_spectrogram(speech_track):
     )
 
     NFFT = 2 ** dsp.nextpow2(512 * 2)
-    assert isinstance(speech_track, tracking.Wave)
+    assert isinstance(speech_track, Wave)
     X, f = dsp.spectrogram_centered(
         speech_track, frame_size, centers, NFFT=NFFT, normalized=False
     )
