@@ -17,11 +17,11 @@ def var():
     return w, p, e
 
 
-def test_select(var):
+def test_select(var, benchmark):
     dict: UserDict = UserDict()
     dict["wave"], dict["partition"], dict["event"] = var
     mt = MultiTrack(dict)
-    new_mt = mt.select(10, 24)
+    new_mt = benchmark(mt.select, 10, 24)
     assert new_mt["wave"] == Wave(value=np.arange(10, 24), fs=1)
     assert new_mt["partition"] == Partition(
         np.array([0, 5, 10, 14], dtype=np.int64),
@@ -30,7 +30,7 @@ def test_select(var):
     )
 
 
-def test_crossfade(var):
+def test_crossfade(var, benchmark):
     w1, p1, e1 = var
     dict: UserDict = UserDict()
     dict["wave"], dict["partition"] = w1, p1
@@ -46,7 +46,7 @@ def test_crossfade(var):
     dict["wave"], dict["partition"] = w2, p2
     mt2 = MultiTrack(dict)
 
-    mt3 = mt1.crossfade(mt2, 5)
+    mt3 = benchmark(mt1.crossfade, mt2, 5)
     assert mt3.duration == mt1.duration + mt2.duration - 5
     assert mt3["wave"] == Wave(
         value=np.r_[np.arange(45), np.array([37, 31, 24, 18, 11]), np.arange(5, 50)],
