@@ -27,7 +27,7 @@ Library to handle signal data and perform signal processing computations
 * Documentation: https://signalworks.readthedocs.io.
 
 
-INSTALLATION
+Installation
 --------
 
 `pip install signalworks`
