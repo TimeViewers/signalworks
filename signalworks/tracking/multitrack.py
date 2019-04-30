@@ -154,7 +154,7 @@ class MultiTrack(UserDict):
         """Loads info about stored tracks from name, adding extension if missing,
         and loads tracks by calling read(<name without extension>) for them.
         """
-        name_wo_ext = os.path.splitext(name)[0]
+        name_wo_ext = os.path.splitext(name)[0]  # TODO: upgrade all path stuff to pathlib
         if name == name_wo_ext:
             name += cls.default_suffix
         with open(name, "rb") as mtt_file:
@@ -166,6 +166,43 @@ class MultiTrack(UserDict):
             track = track_type.read(name_wo_ext, **track_info)
             self[track_info["track_name"]] = track
         return self
+
+    @classmethod
+    def read_edf(cls, path):
+        raise NotImplementedError
+        # TODO: adapt
+        # the following is copied from elsewhere and won't work as is
+        import pyedflib
+        with pyedflib.EdfReader(str(file)) as f:
+            labels = f.getSignalLabels()
+            for label in labels:
+                index = labels.index(label)
+                wav = tracking.Wave(f.readSignal(index), f.getSampleFrequency(index))
+                wav.label = label
+                wav.path = file.with_name(file.stem + '-' + label + '.wav')
+                wav.min = f.getPhysicalMinimum(index)
+                wav.max = f.getPhysicalMaximum(index)
+                wav.unit = f.getPhysicalDimension(index)
+                self.add_view(wav, panel_index=panel_index, y_min=wav.min, y_max=wav.max)
+
+    @classmethod
+    def read_xdf(cls, path):
+        raise NotImplementedError
+        import openxdf
+        # TODO: below is a place holder and needs to be finalize
+        xdf = openxdf.OpenXDF(file)
+        signals = openxdf.Signal(xdf, file.with_suffix('.nkamp'))
+        # TODO: automate this, why are the xdf.header names different from signals.list_channels?
+        for label in ['ECG', 'Chin']:
+            logger.info(f'reading {label} channel')
+            sig = signals.read_file(label)[label]
+            wav = tracking.Wave(sig.ravel(), 200)
+            wav.label = label
+            wav.path = file.with_name(file.stem + '-' + label + '.wav')
+            wav.min = -3200
+            wav.max = 3200
+            wav.unit = '1'
+            self.add_view(wav, panel_index=panel_index, y_min=wav.min, y_max=wav.max)
 
     def write(self, name):
         """Saves info about stored tracks to name, adding extension if missing,

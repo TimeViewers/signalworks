@@ -20,6 +20,7 @@ from signalworks.tracking.metatrack import MetaTrack
 from signalworks.tracking.partition import Partition
 from signalworks.tracking.timevalue import TimeValue
 from signalworks.tracking.wave import Wave
+from signalworks.tracking.multitrack import MultiTrack
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -153,6 +154,10 @@ class Track(MetaTrack):
             return TimeValue.read_tmv(path)  # for now, handle nans
         elif suffix == ".lab":
             return Partition.read(path)
+        elif suffix == ".edf":
+            return MultiTrack.read_edf(path)
+        elif suffix == ".xdf":
+            return MultiTrack.read_xdf(path)
         else:
             raise Exception(f"I don't know how to read files with suffix {suffix}")
 
