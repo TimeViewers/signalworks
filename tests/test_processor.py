@@ -12,51 +12,53 @@ from signalworks.processors import (
 )
 
 
-def test_filter(speech_track):
+def test_filter(speech_track, benchmark):
     processor = Filter()
     processor.set_data({"wave": speech_track})
-    results, = processor.process()
+    results, = benchmark(processor.process)
     assert speech_track.duration == results.duration
     assert isinstance(results.get_value(), np.ndarray)
 
+
+def test_zerofilter(speech_track, benchmark):
     zp_processor = ZeroPhaseFilter()
     zp_processor.set_data({"wave": speech_track})
-    results, = zp_processor.process()
+    results, = benchmark(zp_processor.process)
     assert speech_track.duration == results.duration
     assert isinstance(results.get_value(), np.ndarray)
 
 
-def test_f0(speech_track):
+def test_f0(speech_track, benchmark):
     processor = F0Analyzer()
     processor.set_data({"wave": speech_track})
-    f0, dop, vox = processor.process()
+    f0, dop, vox = benchmark(processor.process)
     assert f0.duration == dop.duration
 
 
-def test_convert(speech_track):
+def test_convert(speech_track, benchmark):
     processor = ConverterToFloat64()
     processor.set_data({"wave": speech_track})
-    results, = processor.process()
+    results, = benchmark(processor.process)
     assert speech_track.duration == results.duration
     assert isinstance(results.get_value(), np.ndarray)
 
 
-def test_energy(speech_track):
+def test_energy(speech_track, benchmark):
     processor = EnergyEstimator()
     processor.set_data({"wave": speech_track})
-    results, = processor.process()
+    results, = benchmark(processor.process)
     assert len(results.get_time()) == len(results.get_value())
 
 
-def test_peaktrack(speech_track):
+def test_peaktrack(speech_track, benchmark):
     processor = PeakTracker()
     processor.set_data({"wave": speech_track})
-    results, = processor.process()
+    results, = benchmark(processor.process)
     assert len(results.get_time()) == len(results.get_value())
 
 
-def test_noisereducer(speech_track):
+def test_noisereducer(speech_track, benchmark):
     processor = NoiseReducer()
     processor.set_data({"wave": speech_track})
-    results, = processor.process()
+    results, = benchmark(processor.process)
     assert len(results.get_time()) == len(results.get_value())
