@@ -50,16 +50,18 @@ def test_select(var):
     assert t_ == Event(np.array([1], dtype=np.int64), 1, 4)
 
 
-def test_resample():
+def test_resample(benchmark):
     e = Event(np.array([3, 6], dtype=np.int64), 1, 10)
-    e = e.resample(2)
+    # e = e.resample(2)
+    e = benchmark(e.resample, 2)
     assert e.time[0] == 6
 
 
-def test_crossfade():
+def test_crossfade(benchmark):
     evt1 = Event(np.array([1, 5, 9], dtype=np.int64), 1, 10)
     evt2 = Event(np.array([2, 5, 9], dtype=np.int64), 1, 10)
     length = 2
-    evt = evt1.crossfade(evt2, length)
+    # evt = evt1.crossfade(evt2, length)
+    evt = benchmark(evt1.crossfade, evt2, length)
     assert evt1.duration + evt2.duration - length == evt.duration
     assert np.allclose(evt.time, np.array([1, 5, 10, 13, 17]))

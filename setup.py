@@ -3,8 +3,9 @@
 
 """The setup script."""
 import os
-from setuptools import setup, find_packages
 from typing import List
+
+from setuptools import find_packages, setup
 
 
 def read(fname: str) -> List[str]:
@@ -53,10 +54,10 @@ setup(
     include_package_data=True,
     keywords="signalworks",
     name="signalworks",
-    packages=find_packages(include=["signalworks"]),
+    packages=find_packages(),
     setup_requires=["pytest-runner"],
     test_suite="tests",
     url="https://github.com/lxkain/signalworks",
-    version="0.1.0",
+    version="0.1.2",
     zip_safe=False,
 )
