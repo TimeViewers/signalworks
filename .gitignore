@@ -104,3 +104,5 @@ pip-wheel-metadata
 
 .DS_Store
 .idea
+.isort.cfg
+.vscode
