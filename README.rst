@@ -30,7 +30,7 @@ Library to handle signal data and perform signal processing computations
 INSTALLATION
 --------
 
-pip install signalworks
+`pip install signalworks`
 
 Features
 --------
