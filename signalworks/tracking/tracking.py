@@ -13,14 +13,10 @@ All track intervals are of the type [), and duration points to the next unoccupi
 import logging
 from builtins import str
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 import numpy
 from signalworks.tracking.metatrack import MetaTrack
-from signalworks.tracking.partition import Partition
-from signalworks.tracking.timevalue import TimeValue
-from signalworks.tracking.wave import Wave
-from signalworks.tracking.multitrack import MultiTrack
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -85,11 +81,11 @@ class Track(MetaTrack):
 
     def __init__(self, path):
         self._fs = 0
-        self.type = None
-        self.min = None
-        self.max = None
-        self.unit = None
-        self.label = None
+        self.type: Optional[str] = None
+        self.min: Optional[int] = None
+        self.max: Optional[int] = None
+        self.unit: Optional[str] = None
+        self.label: Optional[str] = None
         if path is None:
             path = str(id(self))
         self.path = Path(path).with_suffix(self.default_suffix)
@@ -143,6 +139,13 @@ class Track(MetaTrack):
 
     @classmethod
     def read(cls, path):
+        # we do the imports here to avoid circular import when Wave inherits Track, and Track call Wave's function
+        # we only need a function from the dependencies
+        from signalworks.tracking.partition import Partition
+        from signalworks.tracking.timevalue import TimeValue
+        from signalworks.tracking.wave import Wave
+        from signalworks.tracking.multitrack import MultiTrack
+
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix

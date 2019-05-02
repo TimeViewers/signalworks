@@ -8,13 +8,13 @@ from scipy.io.wavfile import read as wav_read
 from scipy.io.wavfile import write as wav_write
 from scipy.signal import resample_poly
 from signalworks.tracking.error import MultiChannelError
-from signalworks.tracking.metatrack import MetaTrack
+from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 
-class Wave(MetaTrack):
+class Wave(Track):
     """monaural waveform"""
 
     default_suffix = ".wav"
@@ -27,7 +27,7 @@ class Wave(MetaTrack):
         offset: int = 0,
         path: str = None,
     ) -> None:
-        super().__init__()
+        super().__init__(path)
         if path is None:
             path = str(id(self))
         self.min: Optional[int] = None
@@ -43,8 +43,8 @@ class Wave(MetaTrack):
         self._offset = (
             offset
         )  # this is required to support heterogenous fs in multitracks
-        self.type = "Wave"
-        self.label = f"amplitude-{value.dtype}"
+        self.type: Optional[str] = "Wave"
+        self.label: Optional[str] = f"amplitude-{value.dtype}"
         if not duration:
             duration = len(self._value)
         assert len(self._value) <= duration < len(self._value) + 1, (
