@@ -2,31 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
-import os
-from typing import List
-
 from setuptools import find_packages, setup
-
-
-def read(fname: str) -> List[str]:
-    contents = open(os.path.join(os.path.dirname(__file__), fname)).read()
-    return contents.split("\n")
-
-
-def read_requirements(fname: str) -> List[str]:
-    contents = read(fname)[1:]
-    filtered = []
-    for requirement in contents:
-        if requirement.startswith("git+"):
-            _, _, pkg_name = requirement.rpartition("=")
-            requirement = pkg_name + "@" + requirement
-        elif requirement.startswith("-i"):
-            continue
-        elif requirement.endswith("."):
-            continue
-    filtered.append(requirement)
-    return filtered
-
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -43,7 +19,6 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
     description="Library to handle signal data and perform signal processing computations",

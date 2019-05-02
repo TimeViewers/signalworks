@@ -1,6 +1,9 @@
 .PHONY: clean clean-test clean-pyc clean-build docs help
 .DEFAULT_GOAL := help
 
+export PIP_USE_PEP517=false
+export PIPENV_VENV_IN_PROJECT=1
+
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 
@@ -108,3 +111,15 @@ install: clean ## install the package to the active Python's site-packages
 	pipenv install --dev --skip-lock .
 	pipenv run pre-commit install
 	pipenv run pre-commit autoupdate
+
+lock:
+	pipenv lock --clear
+
+make bump-minor:
+	pipenv run bump2version minor
+
+make bump-patch:
+	pipenv run bump2version patch
+
+make bump-major:
+	pipenv run bump2version major
