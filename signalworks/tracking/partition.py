@@ -4,10 +4,8 @@ import os
 from pathlib import Path
 
 import numpy
-from signalworks.tracking.error import LabreadError
-from signalworks.tracking.metatrack import MetaTrack
-
-# from signalworks.tracking.timevalue import TimeValue
+from signalworks.tracking import LabreadError
+from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -15,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 TIME_TYPE = numpy.int64
 
 
-class Partition(MetaTrack):
+class Partition(Track):
     default_suffix = ".lab"
 
     def check(self):
@@ -44,7 +42,7 @@ class Partition(MetaTrack):
         return True
 
     def __init__(self, time, value, fs, path=None):
-        super().__init__()
+        super().__init__(path)
         if path is None:
             path = str(id(self))
         self.path = Path(path).with_suffix(self.default_suffix)
@@ -368,7 +366,10 @@ class Partition(MetaTrack):
     @classmethod
     def from_TimeValue(cls, tv):
         """convert a time value track with repeating values into a partition track"""
-        # assert isinstance(tv, TimeValue)
+        # import TimeValue here to avoid circular dependencies
+        from signalworks.tracking.timevalue import TimeValue
+
+        assert isinstance(tv, TimeValue)
         boundary = numpy.where(numpy.diff(tv.value))[0]
         time = numpy.empty(len(boundary), dtype=tv.time.dtype)
         value = numpy.empty(len(boundary) + 1, dtype=tv.value.dtype)
