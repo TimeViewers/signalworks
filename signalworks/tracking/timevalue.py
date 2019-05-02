@@ -3,8 +3,8 @@ import os
 from collections import Iterable
 
 import numpy
-from signalworks.tracking.metatrack import MetaTrack
-from signalworks.tracking.partition import Partition
+from signalworks.tracking import Partition
+from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -12,9 +12,9 @@ logger.setLevel(logging.DEBUG)
 TIME_TYPE = numpy.int64
 
 
-class TimeValue(MetaTrack):
+class TimeValue(Track):
     def __init__(self, time, value, fs, duration, path=None):
-        super().__init__()
+        super().__init__(path)
         assert isinstance(time, numpy.ndarray)
         assert time.ndim == 1
         assert time.dtype == TIME_TYPE
@@ -196,43 +196,43 @@ class TimeValue(MetaTrack):
         self.path = name
         return self
 
-    @classmethod
-    def read_f0(cls, name, frameRate=0.01, frameSize=0.0075, fs=48000):
-        # return TimeValue(numpy.ndarray([1]).astype(TIME_TYPE), numpy.ndarray([1]), fs, 1)
-        # 4 fields for each frame, pitch, probability of voicing, local root mean squared measurements,
-        # and the peak normalized cross-correlation value frame arguments are in seconds
-        f = open(name, "r")
-        lines = f.readlines()
-        f.close()
-        F = len(lines)
-        time = numpy.round((numpy.arange(F) * frameRate + frameSize / 2) * fs).astype(
-            TIME_TYPE
-        )
-        duration = numpy.round((F * frameRate + frameSize) * fs).astype(TIME_TYPE)
-        # time = numpy.arange(len(lines)) * frameRate + frameSize / 2
-        value_f0 = numpy.zeros(F, numpy.float32)
-        value_vox = numpy.zeros(F, numpy.float32)
-        import re
-
-        form = re.compile(r"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$")
-        for i, line in enumerate(lines):
-            match = form.search(line)
-            if not match:
-                # logger.error('badly formatted f0 file: {}'.format("".join(lines)))
-                raise Exception
-                # return (TimeValue(numpy.array([0]), numpy.array([100]), fs, duration),
-                #         Partition(numpy.array([0, duration]), numpy.array([0]), fs))
-            f0, voicing, _energy, _xcorr = match.groups()
-            value_f0[i] = float(f0)
-            value_vox[i] = float(voicing)
-        index = numpy.where(value_f0 > 0)[0]  # keep only nonzeros F0 values
-        pit = TimeValue(time[index], value_f0[index], fs, duration)
-        vox = Partition.from_TimeValue(
-            TimeValue(time, value_vox, fs, duration)
-        )  # return a Partition
-        return pit, vox
-
-    f0read = read_f0
+    # @classmethod
+    # def read_f0(cls, name, frameRate=0.01, frameSize=0.0075, fs=48000):
+    #     # return TimeValue(numpy.ndarray([1]).astype(TIME_TYPE), numpy.ndarray([1]), fs, 1)
+    #     # 4 fields for each frame, pitch, probability of voicing, local root mean squared measurements,
+    #     # and the peak normalized cross-correlation value frame arguments are in seconds
+    #     f = open(name, "r")
+    #     lines = f.readlines()
+    #     f.close()
+    #     F = len(lines)
+    #     time = numpy.round((numpy.arange(F) * frameRate + frameSize / 2) * fs).astype(
+    #         TIME_TYPE
+    #     )
+    #     duration = numpy.round((F * frameRate + frameSize) * fs).astype(TIME_TYPE)
+    #     # time = numpy.arange(len(lines)) * frameRate + frameSize / 2
+    #     value_f0 = numpy.zeros(F, numpy.float32)
+    #     value_vox = numpy.zeros(F, numpy.float32)
+    #     import re
+    #
+    #     form = re.compile(r"^(\S+)\s+(\S+)\s+(\S+)\s+(\S+)$")
+    #     for i, line in enumerate(lines):
+    #         match = form.search(line)
+    #         if not match:
+    #             # logger.error('badly formatted f0 file: {}'.format("".join(lines)))
+    #             raise Exception
+    #             # return (TimeValue(numpy.array([0]), numpy.array([100]), fs, duration),
+    #             #         Partition(numpy.array([0, duration]), numpy.array([0]), fs))
+    #         f0, voicing, _energy, _xcorr = match.groups()
+    #         value_f0[i] = float(f0)
+    #         value_vox[i] = float(voicing)
+    #     index = numpy.where(value_f0 > 0)[0]  # keep only nonzeros F0 values
+    #     pit = TimeValue(time[index], value_f0[index], fs, duration)
+    #     vox = Partition.from_TimeValue(
+    #         TimeValue(time, value_vox, fs, duration)
+    #     )  # return a Partition
+    #     return pit, vox
+    #
+    # f0read = read_f0
 
     @classmethod
     def read_tmv(cls, name, fs=300000):

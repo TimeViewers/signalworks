@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy
 from signalworks.tracking.error import LabreadError
-from signalworks.tracking.metatrack import MetaTrack
+from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -11,7 +11,7 @@ logger.setLevel(logging.DEBUG)
 TIME_TYPE = numpy.int64
 
 
-class Label(MetaTrack):
+class Label(Track):
     """Like Partition, but label regions do NOT have to be contiguous"""
 
     default_suffix = ".lab"
@@ -47,7 +47,7 @@ class Label(MetaTrack):
         return True
 
     def __init__(self, time, value, fs, duration, path=None):
-        super().__init__()
+        super().__init__(path)
         if path is None:
             path = str(id(self))
         self.path = Path(path).with_suffix(self.default_suffix)
@@ -129,6 +129,23 @@ class Label(MetaTrack):
         value = numpy.hstack((self._value, other._value))
         duration = self.duration + other.duration
         return Label(time, value, self.fs, duration)
+
+    def __eq__(self, other):
+        try:
+            if (
+                (self._fs == other._fs)
+                and (len(self._time) == len(other._time))
+                and (len(self._value) == len(other._value))
+                and (self._time == other._time).all()
+                and (self._value == other._value).all()
+            ):
+                return True
+        except AttributeError:
+            pass
+        return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __len__(self):
         return len(self._value)

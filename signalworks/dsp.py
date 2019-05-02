@@ -7,9 +7,10 @@ from typing import Tuple, Union
 
 import numba
 import numpy as np
+import pyworld as pw
 from numpy.fft import fft, ifft, irfft, rfft
 from scipy import signal, stats
-from signalworks.tracking import tracking, wave
+from signalworks.tracking import TimeValue, Wave
 
 # TODO: make this "tracking"-free (?), and all times are in samples
 
@@ -78,7 +79,7 @@ def segment(x, nsize, nrate):
     return X
 
 
-def frame(wav: wave.Wave, frame_size: float, frame_rate: float) -> tracking.TimeValue:
+def frame(wav: Wave, frame_size: float, frame_rate: float) -> TimeValue:
     """
     Given a waveform, return a timeValue track with each frame as the value and times of the center of each frame.
     times point to the center of the frame.
@@ -97,11 +98,8 @@ def frame(wav: wave.Wave, frame_size: float, frame_rate: float) -> tracking.Time
     value = segment(wav.value, nsize, nrate)
     # print(f"frame took time: {time.time() - tic}")
     assert value.shape[1] == nsize
-    time = (
-        np.array(np.arange(value.shape[0]) * nrate, dtype=tracking.TIME_TYPE)
-        + nsize // 2
-    )
-    return tracking.TimeValue(
+    time = np.array(np.arange(value.shape[0]) * nrate, dtype=np.int64) + nsize // 2
+    return TimeValue(
         time, value, wav.fs, wav.duration, path=wav.path
     )  # adjust path name here?
 
@@ -154,9 +152,7 @@ def ola(
     return y
 
 
-def spectral_subtract(
-    inp: wave.Wave, frame_rate: int, silence_percentage: int
-) -> wave.Wave:
+def spectral_subtract(inp: Wave, frame_rate: int, silence_percentage: int) -> Wave:
     assert 0 < silence_percentage < 100
     ftr = frame(inp, frame_rate * 2, frame_rate)
     x = ftr.value * signal.hann(ftr.value.shape[1])
@@ -173,11 +169,11 @@ def spectral_subtract(
     Y = M * np.exp(1j * np.angle(X))  # DEBUG
     y = ifft(Y).real
     s = ola(y, inp.fs, inp.duration, frame_rate * 2, frame_rate)
-    return wave.Wave(s, inp.fs)
+    return Wave(s, inp.fs)
 
 
 def spectrogram(
-    wav: wave.Wave,
+    wav: Wave,
     frame_size: float,
     frame_rate: float,
     window: signal.hann = signal.hann,
@@ -202,7 +198,7 @@ def spectrogram(
 
 
 def spectrogram_centered(
-    wav: wave.Wave,  # used by rendering
+    wav: Wave,  # used by rendering
     frame_size: float,
     time: np.ndarray,
     window: signal.hann = signal.hann,
@@ -245,7 +241,7 @@ def correlate_fft(X: np.ndarray) -> np.ndarray:
 
 
 def correlogram(
-    wav: wave.Wave, frame_size: float, frame_rate: float, normalize: bool = True
+    wav: Wave, frame_size: float, frame_rate: float, normalize: bool = True
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     assert wav.dtype == np.float64
     # t, x = frame(wav, frame_size, frame_rate)
@@ -272,3 +268,12 @@ def correlogram(
 def nextpow2(i: Union[int, float]) -> int:
     """returns the first P such that 2**P >= abs(N)"""
     return int(ceil(log2(i)))
+
+
+def world(wave: Wave) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    x = wave.value / (2 ** 15)
+    fs = wave.fs
+    _f0, t = pw.dio(x, fs)  # raw pitch extractor
+    f0 = pw.stonemask(x, _f0, t, fs)  # pitch refinement
+    sp = pw.cheaptrick(x, f0, t, fs)  # extract smoothed spectrogram
+    return sp, f0, t

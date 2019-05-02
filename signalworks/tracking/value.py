@@ -2,18 +2,18 @@ import os
 from pathlib import Path
 
 import numpy
-from signalworks.tracking.metatrack import MetaTrack
+from signalworks.tracking.tracking import Track
 
 TIME_TYPE = numpy.int64
 
 
-class Value(MetaTrack):
+class Value(Track):
     """can store a singular value (e.g. comment string) of any type"""
 
     default_suffix = ".trk"
 
     def __init__(self, value, fs, duration, path=None):
-        super().__init__()
+        super().__init__(path)
         if path is None:
             path = str(id(self))
         self.path = Path(path).with_suffix(self.default_suffix)
