@@ -12,7 +12,7 @@ python_version = "3.7"
 [packages]
 numpy = ">=1.16.3"
 scipy = ">=1.2.1"
-numba = ">=0.43.1"
+numba = "==0.42.0"
 
 [dev-packages]
 pre-commit = ">=1.15.2"
