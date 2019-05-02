@@ -23,3 +23,8 @@ def test_spectrogram(speech_track, benchmark):
         normalized=False,
     )
     assert X.shape == (len(centers), NFFT // 2 + 1)
+
+
+def test_world(speech_track, benchmark):
+    sp, f0, t = benchmark(dsp.world, speech_track)
+    assert sp.shape[1] == 513

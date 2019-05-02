@@ -1,6 +1,7 @@
 import numpy
 import pytest
 from signalworks.tracking.timevalue import TimeValue
+from signalworks.tracking.tracking import Track
 
 TIME_TYPE = numpy.int64
 
@@ -13,6 +14,8 @@ def var():
     t2 = TimeValue(
         (numpy.linspace(2, 8, 4)).astype(TIME_TYPE), numpy.array([1, 4, 8, 2]), 1, 10
     )
+    assert isinstance(t1, Track)
+    assert isinstance(t2, Track)
     return t1, t2
 
 

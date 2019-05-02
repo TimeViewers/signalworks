@@ -1,12 +1,15 @@
 import numpy as np
 import pytest
-from signalworks.tracking.event import Event
+from signalworks.tracking import Event, Track
 
 
 @pytest.fixture
 def var():
     t = Event(np.array([3, 6], dtype=np.int64), 1, 10)
     u = Event(np.array([0, 2], dtype=np.int64), 1, 3)
+    assert isinstance(t, Event)
+    assert isinstance(u, Event)
+    assert isinstance(u, Track)
     return t, u
 
 

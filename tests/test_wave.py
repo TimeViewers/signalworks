@@ -1,12 +1,14 @@
 import numpy as np
 import pytest
-from signalworks.tracking.wave import Wave
+from signalworks.tracking import Track, Wave
 
 
 @pytest.fixture
 def var():
     w = Wave(value=np.arange(0, 16000), fs=16000)
     v = Wave(value=np.arange(100, 200), fs=16000)
+    assert isinstance(w, Track)
+    assert isinstance(v, Track)
     return w, v
 
 

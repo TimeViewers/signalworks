@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from signalworks.tracking import Label
+from signalworks.tracking import Label, Track
 
 
 @pytest.fixture
@@ -14,6 +14,8 @@ def var():
     p2 = Label(
         np.array([0, 5, 8, 10], dtype=np.int64), np.array(["start2", "end2"]), 1, 10
     )
+    assert isinstance(p1, Track)
+    assert isinstance(p2, Track)
     return p1, p2
 
 
