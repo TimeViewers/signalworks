@@ -101,8 +101,6 @@ ENV/
 # mypy
 .mypy_cache/
 pip-wheel-metadata
-
+Pipfile.lock
 .DS_Store
 .idea
-.isort.cfg
-.vscode
