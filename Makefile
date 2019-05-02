@@ -4,6 +4,12 @@
 export PIP_USE_PEP517=false
 export PIPENV_VENV_IN_PROJECT=1
 
+PYTHON:=$(shell which python3)
+PIP:=$(PYTHON) -m pip
+PIPENV:=$(shell which pipenv)
+PRE_COMMIT:=$(PIPENV) run pre-commit
+VENV:=$(shell $(PIPENV) --venv)
+
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 
@@ -32,7 +38,10 @@ BROWSER := python -c "$$BROWSER_PYSCRIPT"
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-clean: clean-build clean-pyc clean-test clean-venv clean-precommit clean-mypy ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-pyc clean-test clean-precommit clean-mypy ## remove all build, test, coverage and Python artifacts
+
+remove-venv:
+	rm -rf $(VENV)
 
 clean-precommit:
 	pipenv run pre-commit clean
@@ -60,66 +69,66 @@ clean-mypy:
 	rm -rf .mypy_cache
 
 clean-venv:
-	@rm -rf .venv
+	@rm -rf $(VENV)
 
 lint: ## check style with flake8
-	pipenv run flake8 signalworks tests
-	pipenv run mypy signalworks tests
+	$(PIPENV) run flake8 signalworks tests
+	$(PIPENV) run mypy signalworks tests
 
 test: ## run tests quickly with the default Python
-	pipenv run python setup.py test
+	$(PIPENV) run python setup.py test
 
 test-all: ## run tests on every Python version with tox
-	pipenv run tox
+	$(PIPENV) run tox
 
 coverage: ## check code coverage quickly with the default Python
-	pipenv run coverage run --source signalworks -m pytest
-	pipenv run coverage report -m
-	pipenv run coverage html
+	$(PIPENV) run coverage run --source signalworks -m pytest
+	$(PIPENV) run coverage report -m
+	$(PIPENV) run coverage html
 	$(BROWSER) htmlcov/index.html
 
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/signalworks.rst
 	rm -f docs/modules.rst
-	pipenv run sphinx-apidoc -o docs/ signalworks
+	$(PIPENV) run sphinx-apidoc -o docs/ signalworks
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
 servedocs: docs ## compile the docs watching for changes
-	pipenv run watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+	$(PIPENV) run watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 release: dist ## package and upload a release
-	pipenv run twine upload dist/*
+	$(PIPENV) run twine upload dist/*
 
-dist: clean ## builds source and wheel package
-	pipenv run python setup.py sdist
-	pipenv run python setup.py bdist_wheel
+dist: clean  ## builds source and wheel package
+	$(PIPENV) run python setup.py sdist
+	$(PIPENV) run python setup.py bdist_wheel
 	ls -l dist
 
 style: black isort
 
 black:
-	pipenv run black .
+	$(PIPENV) run black .
 
 isort:
-	pipenv run isort -y
+	$(PIPENV) run isort -y
 
 format: style
 
-install: clean ## install the package to the active Python's site-packages
-	pipenv install --dev --skip-lock .
-	pipenv run pre-commit install
-	pipenv run pre-commit autoupdate
+install: clean remove-venv ## install the package to the active Python's site-packages
+	$(PIPENV) install --dev --skip-lock .
+	$(PIPENV) run pre-commit install
+	$(PIPENV) run pre-commit autoupdate
 
 lock:
-	pipenv lock --clear
+	$(PIPENV) lock --clear
 
-make bump-minor:
-	pipenv run bump2version minor
+bump-minor:
+	$(PIPENV) run bump2version minor
 
-make bump-patch:
-	pipenv run bump2version patch
+bump-patch:
+	$(PIPENV) run bump2version patch
 
-make bump-major:
-	pipenv run bump2version major
+bump-major:
+	$(PIPENV) run bump2version major
