@@ -2,13 +2,19 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
+import os
+from typing import List
+
 from setuptools import find_packages, setup
+
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
 
+
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
+
 
 setup(
     author="Alex Kain",
