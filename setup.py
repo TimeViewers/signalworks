@@ -23,13 +23,7 @@ setup(
     ],
     description="Library to handle signal data and perform signal processing computations",
     entry_points={"console_scripts": ["signalworks=signalworks.cli:main"]},
-    install_requires=[
-        "numpy",
-        "scipy",
-        "numba==0.42.0",
-        "llvmlite==0.27.0",
-        "pyworld==0.2.8",
-    ],
+    install_requires=["numpy", "scipy", "numba==0.42.0", "llvmlite==0.27.0"],
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
@@ -39,6 +33,6 @@ setup(
     setup_requires=["pytest-runner"],
     test_suite="tests",
     url="https://github.com/lxkain/signalworks",
-    version="0.1.5",
+    version="0.1.7",
     zip_safe=False,
 )

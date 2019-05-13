@@ -28,9 +28,9 @@ Library to handle signal data and perform signal processing computations
 
 
 Installation
---------
+------------
 
-`pip install signalworks`
+pip install signalworks
 
 Features
 --------
