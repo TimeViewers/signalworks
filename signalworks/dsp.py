@@ -7,7 +7,6 @@ from typing import Tuple, Union
 
 import numba
 import numpy as np
-import pyworld as pw
 from numpy.fft import fft, ifft, irfft, rfft
 from scipy import signal, stats
 from signalworks.tracking import TimeValue, Wave
@@ -270,10 +269,12 @@ def nextpow2(i: Union[int, float]) -> int:
     return int(ceil(log2(i)))
 
 
-def world(wave: Wave) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x = wave.value / (2 ** 15)
-    fs = wave.fs
-    _f0, t = pw.dio(x, fs)  # raw pitch extractor
-    f0 = pw.stonemask(x, _f0, t, fs)  # pitch refinement
-    sp = pw.cheaptrick(x, f0, t, fs)  # extract smoothed spectrogram
-    return sp, f0, t
+#
+#
+# def world(wave: Wave) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+#     x = wave.value / (2 ** 15)
+#     fs = wave.fs
+#     _f0, t = pw.dio(x, fs)  # raw pitch extractor
+#     f0 = pw.stonemask(x, _f0, t, fs)  # pitch refinement
+#     sp = pw.cheaptrick(x, f0, t, fs)  # extract smoothed spectrogram
+#     return sp, f0, t
