@@ -150,6 +150,20 @@ class Track(MetaTrack):
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix
+        supported_audio = [
+            ".au",
+            ".avr",
+            ".caf",
+            ".flac",
+            ".nis",
+            ".mpc",
+            ".ogg",
+            ".paf",
+            ".pvf",
+            ".rf64",
+            ".sd2",
+            ".sds",
+        ]
         if suffix.lower() == ".wav":
             channels = None
             mmap = False
@@ -176,16 +190,7 @@ class Track(MetaTrack):
                 wav.min = -32767
                 wav.max = 32768
             return wav
-        elif suffix == ".au":
-            assert samplerate
-            value, fs = sf.read(path)
-            wav = Wave(value, fs, path=path)
-            if value.dtype == numpy.int16:
-                wav.min = -32767
-                wav.max = 32768
-            return wav
-        elif suffix == ".nis":
-            assert samplerate
+        elif suffix in supported_audio:
             value, fs = sf.read(path)
             wav = Wave(value, fs, path=path)
             if value.dtype == numpy.int16:
