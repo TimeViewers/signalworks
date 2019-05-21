@@ -138,18 +138,19 @@ class Track(MetaTrack):
         raise NotImplementedError
 
     @classmethod
-    def read(cls, path):
+    def read(cls, path, samplerate=None):
         # we do the imports here to avoid circular import when Wave inherits Track, and Track call Wave's function
         # we only need a function from the dependencies
         from signalworks.tracking.partition import Partition
         from signalworks.tracking.timevalue import TimeValue
         from signalworks.tracking.wave import Wave
         from signalworks.tracking.multitrack import MultiTrack
+        import soundfile as sf
 
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix
-        if suffix == ".wav":
+        if suffix.lower() == ".wav":
             channels = None
             mmap = False
             return Wave.wav_read(path, channels, mmap)
@@ -161,6 +162,36 @@ class Track(MetaTrack):
             return MultiTrack.read_edf(path)
         elif suffix == ".xdf":
             return MultiTrack.read_xdf(path)
+        elif suffix == ".raw":
+            assert samplerate
+            value, fs = sf.read(
+                path,
+                channels=1,
+                samplerate=samplerate,
+                subtype="PCM_16",
+                endian="LITTLE",
+            )
+            wav = Wave(value, fs, path=path)
+            if value.dtype == numpy.int16:
+                wav.min = -32767
+                wav.max = 32768
+            return wav
+        elif suffix == ".au":
+            assert samplerate
+            value, fs = sf.read(path)
+            wav = Wave(value, fs, path=path)
+            if value.dtype == numpy.int16:
+                wav.min = -32767
+                wav.max = 32768
+            return wav
+        elif suffix == ".nis":
+            assert samplerate
+            value, fs = sf.read(path)
+            wav = Wave(value, fs, path=path)
+            if value.dtype == numpy.int16:
+                wav.min = -32767
+                wav.max = 32768
+            return wav
         else:
             raise Exception(f"I don't know how to read files with suffix {suffix}")
 
