@@ -163,6 +163,10 @@ class Track(MetaTrack):
             ".rf64",
             ".sd2",
             ".sds",
+            ".voc",
+            ".wavex",
+            ".wve",
+            ".xi",
         ]
         if suffix.lower() == ".wav":
             channels = None
