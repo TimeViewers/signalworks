@@ -1,2 +1,7 @@
+*.WV1 filter=lfs diff=lfs merge=lfs -text
+*.WV2 filter=lfs diff=lfs merge=lfs -text
+*.wa1 filter=lfs diff=lfs merge=lfs -text
+*.wa2 filter=lfs diff=lfs merge=lfs -text
+*.au filter=lfs diff=lfs merge=lfs -text
 *.WAV filter=lfs diff=lfs merge=lfs -text
 *.nis filter=lfs diff=lfs merge=lfs -text
