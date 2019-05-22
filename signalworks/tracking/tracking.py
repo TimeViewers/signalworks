@@ -150,25 +150,10 @@ class Track(MetaTrack):
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix
-        supported_audio = [
-            ".au",
-            ".avr",
-            ".caf",
-            ".flac",
-            ".nis",
-            ".mpc",
-            ".ogg",
-            ".paf",
-            ".pvf",
-            ".rf64",
-            ".sd2",
-            ".sds",
-            ".voc",
-            ".wavex",
-            ".wve",
-            ".xi",
-        ]
-        if suffix.lower() == ".wav":
+        fileIn = open(path, "rb")
+        header = fileIn.read(5)
+        fileIn.close()
+        if header == "b'RIFF$'":
             channels = None
             mmap = False
             return Wave.wav_read(path, channels, mmap)
@@ -180,29 +165,16 @@ class Track(MetaTrack):
             return MultiTrack.read_edf(path)
         elif suffix == ".xdf":
             return MultiTrack.read_xdf(path)
-        elif suffix == ".raw":
-            assert samplerate
-            value, fs = sf.read(
-                path,
-                channels=1,
-                samplerate=samplerate,
-                subtype="PCM_16",
-                endian="LITTLE",
-            )
-            wav = Wave(value, fs, path=path)
-            if value.dtype == numpy.int16:
-                wav.min = -32767
-                wav.max = 32768
-            return wav
-        elif suffix in supported_audio:
-            value, fs = sf.read(path)
-            wav = Wave(value, fs, path=path)
-            if value.dtype == numpy.int16:
-                wav.min = -32767
-                wav.max = 32768
-            return wav
         else:
-            raise Exception(f"I don't know how to read files with suffix {suffix}")
+            try:
+                value, fs = sf.read(path)
+                wav = Wave(value, fs, path=path)
+                if value.dtype == numpy.int16:
+                    wav.min = -32767
+                    wav.max = 32768
+                return wav
+            except Exception:
+                print("we don't know the format")
 
     def write(self, name, *args, **kwargs):
         """Saves object to name, adding default extension if missing."""
