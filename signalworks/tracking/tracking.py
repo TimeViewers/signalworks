@@ -174,7 +174,7 @@ class Track(MetaTrack):
                     wav.max = 32768
                 return wav
             except Exception:
-                print("we don't know the format")
+                raise Exception("we don't know the format")
 
     def write(self, name, *args, **kwargs):
         """Saves object to name, adding default extension if missing."""
