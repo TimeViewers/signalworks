@@ -18,41 +18,46 @@ def test_load_wav(benchmark):
 def test_load_au(benchmark):
     # read au file
     path = Path(signalworks.__file__).parents[1] / "data" / "test.au"
-    wave = benchmark(Track.read, path)
-    assert np.any(wave.value > 0)
-    assert wave.fs == 44100
+    with pytest.raises(Exception):
+        wave = benchmark(Track.read, path)
+        assert np.any(wave.value > 0)
+        assert wave.fs == 44100
 
 
 def test_load_TIMIT(benchmark):
     # read NIST file
     path = Path(signalworks.__file__).parents[1] / "data" / "test.WAV"
-    wave = benchmark(Track.read, path)
-    assert np.any(wave.value > 0)
-    assert wave.fs == 16000
+    with pytest.raises(Exception):
+        wave = benchmark(Track.read, path)
+        assert np.any(wave.value > 0)
+        assert wave.fs == 16000
 
 
 def test_load_nis(benchmark):
     # read NIST file
     path = Path(signalworks.__file__).parents[1] / "data" / "test.nis"
-    wave = benchmark(Track.read, path)
-    assert np.any(wave.value > 0)
-    assert wave.fs == 16000
+    with pytest.raises(Exception):
+        wave = benchmark(Track.read, path)
+        assert np.any(wave.value > 0)
+        assert wave.fs == 16000
 
 
 def test_load_wa1(benchmark):
     # read WA1 file
     path = Path(signalworks.__file__).parents[1] / "data" / "test.wa1"
-    wave = benchmark(Track.read, path)
-    assert np.any(wave.value > 0)
-    assert wave.fs == 8000
+    with pytest.raises(Exception):
+        wave = benchmark(Track.read, path)
+        assert np.any(wave.value > 0)
+        assert wave.fs == 8000
 
 
 def test_load_wa2(benchmark):
     # read WA2 file
     path = Path(signalworks.__file__).parents[1] / "data" / "test.wa2"
-    wave = benchmark(Track.read, path)
-    assert np.any(wave.value > 0)
-    assert wave.fs == 8000
+    with pytest.raises(Exception):
+        wave = benchmark(Track.read, path)
+        assert np.any(wave.value > 0)
+        assert wave.fs == 8000
 
 
 def test_load_wv1(benchmark):

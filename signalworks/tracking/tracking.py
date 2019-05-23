@@ -13,7 +13,7 @@ All track intervals are of the type [), and duration points to the next unoccupi
 import logging
 from builtins import str
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy
 from signalworks.tracking.metatrack import MetaTrack
@@ -82,8 +82,8 @@ class Track(MetaTrack):
     def __init__(self, path):
         self._fs = 0
         self.type: Optional[str] = None
-        self.min: Optional[int] = None
-        self.max: Optional[int] = None
+        self.min: Union[int, float, None] = None
+        self.max: Union[int, float, None] = None
         self.unit: Optional[str] = None
         self.label: Optional[str] = None
         if path is None:
@@ -145,15 +145,18 @@ class Track(MetaTrack):
         from signalworks.tracking.timevalue import TimeValue
         from signalworks.tracking.wave import Wave
         from signalworks.tracking.multitrack import MultiTrack
-        import soundfile as sf
 
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix
-        fileIn = open(path, "rb")
-        header = fileIn.read(5)
-        fileIn.close()
-        if header == "b'RIFF$'":
+
+        with open(path, "rb") as fileIn:
+            bufHeader = fileIn.read(38)
+        if (
+            (bufHeader[0:4] == b"RIFF")
+            and (bufHeader[12:16] == b"fmt ")
+            and (bufHeader[0:5] != b"RIFFB")
+        ):
             channels = None
             mmap = False
             return Wave.wav_read(path, channels, mmap)
@@ -166,15 +169,9 @@ class Track(MetaTrack):
         elif suffix == ".xdf":
             return MultiTrack.read_xdf(path)
         else:
-            try:
-                value, fs = sf.read(path)
-                wav = Wave(value, fs, path=path)
-                if value.dtype == numpy.int16:
-                    wav.min = -32767
-                    wav.max = 32768
-                return wav
-            except Exception:
-                raise Exception("we don't know the format")
+            channels = None
+            mmap = False
+            return Wave.wav_read(path, channels, mmap)
 
     def write(self, name, *args, **kwargs):
         """Saves object to name, adding default extension if missing."""
