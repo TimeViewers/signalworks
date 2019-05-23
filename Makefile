@@ -75,9 +75,6 @@ lint: ## check style with flake8
 	$(PIPENV) run flake8 signalworks tests
 	$(PIPENV) run mypy signalworks tests
 
-test: ## run tests quickly with the default Python
-	$(PIPENV) run python setup.py test
-
 test-all: ## run tests on every Python version with tox
 	$(PIPENV) run tox
 
@@ -120,6 +117,11 @@ install: clean remove-venv ## install the package to the active Python's site-pa
 	$(PIPENV) install --dev --skip-lock .
 	$(PIPENV) run pre-commit install
 	$(PIPENV) run pre-commit autoupdate
+	git lfs install
+
+test:
+	git lfs pull
+	$(PIPENV) run python setup.py test
 
 lock:
 	$(PIPENV) lock --clear
