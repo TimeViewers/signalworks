@@ -30,8 +30,8 @@ class Wave(Track):
         super().__init__(path)
         if path is None:
             path = str(id(self))
-        self.min: Optional[int] = None
-        self.max: Optional[int] = None
+        self.min = None
+        self.max = None
         # TODO: what happens if path is None
         self.path = Path(path).with_suffix(self.default_suffix)
         assert isinstance(value, numpy.ndarray)
@@ -255,13 +255,25 @@ class Wave(Track):
     @classmethod
     def read_wav(cls, path, channel=None, mmap=False):
         """load waveform from file"""
-        fs, value = wav_read(path, mmap=mmap)
+        try:
+            fs, value = wav_read(path, mmap=mmap)
+        except ValueError:
+            try:
+                import soundfile as sf
+
+                value, fs = sf.read(path, dtype="int16")
+            except ImportError:
+                logging.error(
+                    f"Scipy was unable to import {path}, "
+                    f"try installing soundfile python package for more compatability"
+                )
+                raise ImportError
+            except RuntimeError:
+                raise RuntimeError(f"Unable to import audio file {path}")
         if value.ndim == 1:
             if channel is not None and channel != 0:
                 raise MultiChannelError(
-                    "cannot select channel {} from monaural file {}".format(
-                        channel, path
-                    )
+                    f"cannot select channel {channel} from monaural file {path}"
                 )
         if value.ndim == 2:
             if channel is None:
@@ -276,10 +288,22 @@ class Wave(Track):
                     f"{path} with {value.shape[1]} channels"
                 )
         wav = Wave(value, fs, path=path)
-        if value.dtype == numpy.int16:
+        if value.dtype == numpy.dtype(numpy.int16):
             wav.min = -32767
             wav.max = 32768
+        elif value.dtype == numpy.dtype(numpy.int32):
+            wav.min = -2147483648
+            wav.max = 2147483647
+        elif value.dtype == numpy.dtype(numpy.uint8):
+            wav.min = 0
+            wav.max = 255
+        elif value.dtype in set(
+            [numpy.dtype(numpy.float64), numpy.dtype(numpy.float32)]
+        ):
+            wav.max = 1.0
+            wav.min = -1.0
         else:
+            logging.error(f"Wave dtype {value.dtype} not supported")
             raise NotImplementedError
         return wav
 

@@ -13,7 +13,7 @@ All track intervals are of the type [), and duration points to the next unoccupi
 import logging
 from builtins import str
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import numpy
 from signalworks.tracking.metatrack import MetaTrack
@@ -82,8 +82,8 @@ class Track(MetaTrack):
     def __init__(self, path):
         self._fs = 0
         self.type: Optional[str] = None
-        self.min: Optional[int] = None
-        self.max: Optional[int] = None
+        self.min: Union[int, float, None] = None
+        self.max: Union[int, float, None] = None
         self.unit: Optional[str] = None
         self.label: Optional[str] = None
         if path is None:
@@ -138,7 +138,7 @@ class Track(MetaTrack):
         raise NotImplementedError
 
     @classmethod
-    def read(cls, path):
+    def read(cls, path, samplerate=None):
         # we do the imports here to avoid circular import when Wave inherits Track, and Track call Wave's function
         # we only need a function from the dependencies
         from signalworks.tracking.partition import Partition
@@ -149,7 +149,14 @@ class Track(MetaTrack):
         """Loads object from name, adding default extension if missing."""
         # E = []
         suffix = Path(path).suffix
-        if suffix == ".wav":
+
+        with open(path, "rb") as fileIn:
+            bufHeader = fileIn.read(38)
+        if (
+            (bufHeader[0:4] == b"RIFF")
+            and (bufHeader[12:16] == b"fmt ")
+            and (bufHeader[0:5] != b"RIFFB")
+        ):
             channels = None
             mmap = False
             return Wave.wav_read(path, channels, mmap)
@@ -162,7 +169,9 @@ class Track(MetaTrack):
         elif suffix == ".xdf":
             return MultiTrack.read_xdf(path)
         else:
-            raise Exception(f"I don't know how to read files with suffix {suffix}")
+            channels = None
+            mmap = False
+            return Wave.wav_read(path, channels, mmap)
 
     def write(self, name, *args, **kwargs):
         """Saves object to name, adding default extension if missing."""
