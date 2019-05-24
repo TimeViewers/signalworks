@@ -70,19 +70,25 @@ def test_load_wa2(benchmark):
     assert wave.fs == 8000
 
 
+@pytest.mark.xfail(reason="We cannot support this kind of file")
 def test_load_wv1(benchmark):
     # read WA2 file
     path = Path(signalworks.__file__).parents[1] / "data" / "test.WV1"
     soundfile = pytest.importorskip(  # noqa
         "soundfile", reason="If soundfile is not installed, this test will fail"
     )
-    benchmark(Track.read, path)
+    wave = benchmark(Track.read, path)
+    assert np.any(wave.value > 0)
+    assert wave.fs == 16000
 
 
+@pytest.mark.xfail(reason="We cannot support this kind of file")
 def test_load_wv2(benchmark):
     # read WA2 file
     path = str(Path(signalworks.__file__).parents[1] / "data" / "test.WV2")
     soundfile = pytest.importorskip(  # noqa
         "soundfile", reason="If soundfile is not installed, this test will fail"
     )
-    benchmark(Track.read, path)
+    wave = benchmark(Track.read, path)
+    assert np.any(wave.value > 0)
+    assert wave.fs == 16000
