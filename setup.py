@@ -24,7 +24,7 @@ setup(
     description="Library to handle signal data and perform signal processing computations",
     entry_points={"console_scripts": ["signalworks=signalworks.cli:main"]},
     install_requires=["numpy", "scipy", "numba==0.42.0", "llvmlite==0.27.0"],
-    extras_require={"label": ["pyedflib", "openxdf"]},
+    extras_require={"label": ["pyedflib", "openxdf"], "robust_audio": ["soundfile"]},
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
