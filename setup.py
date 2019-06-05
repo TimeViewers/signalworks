@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """The setup script."""
+from itertools import chain
+
 from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
@@ -9,6 +11,34 @@ with open("README.rst") as readme_file:
 
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
+
+install_requires = ["numpy", "scipy", "numba"]
+
+extras_require = {
+    "test": [
+        "pytest",
+        "pytest-runner",
+        "pytest-benchmark",
+        "pytest-cov",
+        "pytest-xdist",
+        "coverage",
+        "tox",
+        "tox-conda",
+        "pre-commit",
+    ],
+    "lint": ["mypy", "flake8", "flake8-bugbear", "flake8-comprehensions"],
+    "style": ["black", "isort"],
+    "docs": ["Sphinx", "watchdog"],
+    "label": ["pyedflib", "openxdf"],
+    "extended_audio": ["soundfile"],
+}
+
+extras_require["dev"] = list(chain.from_iterable(chain(extras_require.values())))
+extras_require["full"] = list(
+    chain.from_iterable(
+        chain(extras_require["label"] + extras_require["extended_audio"])
+    )
+)
 
 setup(
     author="Alex Kain",
@@ -23,8 +53,8 @@ setup(
     ],
     description="Library to handle signal data and perform signal processing computations",
     entry_points={"console_scripts": ["signalworks=signalworks.cli:main"]},
-    install_requires=["numpy", "scipy", "numba==0.42.0", "llvmlite==0.27.0"],
-    extras_require={"label": ["pyedflib", "openxdf"], "robust_audio": ["soundfile"]},
+    install_requires=install_requires,
+    extras_require=extras_require,
     license="MIT license",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
