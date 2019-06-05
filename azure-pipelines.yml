@@ -4,33 +4,55 @@
 # https://docs.microsoft.com/azure/devops/pipelines/languages/python
 
 trigger:
-- master
+  branches:
+    include:
+    - '*' # Build for all branches if they have a azure-pipelines.yml file.
+  tags:
+    include:
+    - 'v*' # Ensure that we are building for tags starting with 'v' (Official Versions)
+
+# Build only for PRs for master branch
+pr:
+  autoCancel: true
+  branches:
+    include:
+      - master
+      - develop
 
 pool:
   vmImage: 'Ubuntu-16.04'
-strategy:
-  matrix:
-    Python27:
-      python.version: '2.7'
-    Python35:
-      python.version: '3.5'
-    Python36:
-      python.version: '3.6'
-    Python37:
-      python.version: '3.7'
 
 steps:
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+    versionSpec: '3.7'
+    architecture: 'x64'
 
 - script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
+    python -m pip install --upgrade pip setuptools wheel
+    python -m pip install ".[test]"
   displayName: 'Install dependencies'
 
 - script: |
-    pip install pytest pytest-azurepipelines
-    pytest
-  displayName: 'pytest'
+    pytest . --junitxml=junit/test-results.xml --cov --cov-report=xml --cov-report=html -rxXsvv
+  displayName: 'Test'
+
+- script: |
+    python -m pip install ".[lint]"
+    mypy signalworks tests
+    flake8 signalworks tests
+  displayName: "Lint Checking"
+
+- task: PublishTestResults@2
+  condition: succeededOrFailed()
+  inputs:
+    testResultsFiles: '**/test-*.xml'
+    testRunTitle: 'Publish Test Results'
+    publishRunAttachments: true
+
+- task: PublishCodeCoverageResults@1
+  condition: succeededOrFailed()
+  inputs:
+    codeCoverageTool: Cobertura
+    summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
+    reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
