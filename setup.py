@@ -20,6 +20,7 @@ extras_require = {
         "pytest-runner",
         "pytest-benchmark",
         "pytest-cov",
+        "pytest-xdist",
         "coverage",
         "tox",
         "tox-conda",
