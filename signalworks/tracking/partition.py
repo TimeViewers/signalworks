@@ -2,6 +2,7 @@ import codecs
 import logging
 import os
 from pathlib import Path
+from typing import List, Tuple
 
 import numpy
 from signalworks.tracking import LabreadError
@@ -210,6 +211,47 @@ class Partition(Track):
             except FileNotFoundError:  # TODO: need to catch more exceptions?
                 pass
             raise ValueError("file '{}' has unknown format".format(name))
+
+    @classmethod
+    def create_partition_obj(cls, data: List[Tuple], fs: int = 300_000) -> "Partition":
+        time: list = []
+        value: list = []
+        for (
+            tmp1,
+            tmp2,
+            label,
+        ) in data:  # tmp1 (milisecond), tmp2 (milisecond), label (string)
+            t1 = float(tmp1) / 1000
+            t2 = float(tmp2) / 1000
+            if label[-1] == "\r":
+                label = label[:-1]
+            if len(time) == 0:
+                time.append(t1)
+            else:
+                if time[-1] != t1:
+                    logger.warning(f"noncontiguous label {label}")
+            dur = t2 - time[-1]
+            if dur > 0:
+                time.append(t2)
+                value.append(label)
+            elif dur == 0:
+                logger.warning(f"zero-length label {label}")
+            else:
+                raise LabreadError(
+                    "label file contains times that are not monotonically increasing"
+                )
+        if len(time) == 0:
+            raise (Exception("file is empty or all lines were ignored"))
+        if time[0] != 0:
+            logger.warning("moving first label boundary to zero")
+            time[0] = 0
+        time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
+        value = numpy.array(
+            value, dtype="U16"
+        )  # if label_type is str else numpy.float64)
+        return Partition(
+            time, value, fs=fs
+        )  # u1p to 16 characters (labels could be words)
 
     @classmethod
     def read_lab(
