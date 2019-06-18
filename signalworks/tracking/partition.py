@@ -213,7 +213,9 @@ class Partition(Track):
             raise ValueError("file '{}' has unknown format".format(name))
 
     @classmethod
-    def create_partition_obj(cls, data: List[Tuple], fs: int = 300_000) -> "Partition":
+    def create(
+        cls, data: List[Tuple[float, float, str]], fs: int = 300_000
+    ) -> "Partition":
         time: list = []
         value: list = []
         for (
@@ -262,9 +264,8 @@ class Partition(Track):
             lines = f.readlines()
         if len(lines) == 0:
             raise ValueError("file '{}' is empty".format(name))
-        time: list = []
-        value: list = []
         # label_type = numpy.float64
+        data = []
         for i, line in enumerate(lines):
             try:
                 tmp1, tmp2, label = line[:-1].split()
@@ -273,48 +274,10 @@ class Partition(Track):
                     'ignoring line "%s" in file %s at line %i' % (line, name, i + 1)
                 )
                 continue
-            t1 = float(tmp1)
-            t2 = float(tmp2)
-            if label[-1] == "\r":
-                label = label[:-1]
-            if len(time) == 0:
-                time.append(t1)
-            else:
-                if time[-1] != t1:
-                    logger.warning(
-                        'noncontiguous label "%s" in file %s at line %i, fixing'
-                        % (label, name, i + 1)
-                    )
-            dur = t2 - time[-1]
-            if dur > 0:
-                time.append(t2)
-                value.append(label)
-            elif dur == 0:
-                logger.warning(
-                    'zero-length label "%s" in file %s at line %i, ignoring'
-                    % (label, name, i + 1)
-                )
-            else:
-                raise LabreadError(
-                    "label file contains times that are not monotonically increasing"
-                )
-        if len(time) == 0:
-            raise (Exception("file is empty or all lines were ignored"))
-        if time[0] != 0:
-            logger.warning("moving first label boundary to zero")
-            time[0] = 0
-            # or insert a first label
-            # time.insert(0, 0)
-            # value.insert(0, default_label)
-        time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
-        # assert labels are not longer than 8 characters
-        # value = numpy.array(value, dtype='U16' if label_type is str else numpy.float64)
-        value = numpy.array(
-            value, dtype="U16"
-        )  # if label_type is str else numpy.float64)
-        return Partition(
-            time, value, fs=fs, path=name
-        )  # u1p to 16 characters (labels could be words)
+            t1 = float(tmp1)  # in second
+            t2 = float(tmp2)  # in second
+            data.append((t1 * 1000, t2 * 1000, label))
+        return Partition.create(data, fs)
 
     @classmethod
     def read_partition(cls, name, fs=48000, encoding="UTF8"):
