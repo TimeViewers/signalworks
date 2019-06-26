@@ -2,8 +2,10 @@ import codecs
 import logging
 import os
 from pathlib import Path
+from typing import List, Tuple
 
 import numpy
+
 from signalworks.tracking import LabreadError
 from signalworks.tracking.tracking import Track
 
@@ -212,46 +214,29 @@ class Partition(Track):
             raise ValueError("file '{}' has unknown format".format(name))
 
     @classmethod
-    def read_lab(
-        cls, name: str, fs: int = 300_000, encoding: str = "UTF8"
+    def create(
+        cls, data: List[Tuple[float, float, str]], fs: int = 300_000
     ) -> "Partition":
-        """load times, values from a label file"""
-        with codecs.open(name, "r", encoding=encoding) as f:
-            lines = f.readlines()
-        if len(lines) == 0:
-            raise ValueError("file '{}' is empty".format(name))
+        """
+        create Partition from a list of alignment.
+        The list consists of tuples in the format of (start time (sec), end time (sec), string label)
+        """
         time: list = []
         value: list = []
-        # label_type = numpy.float64
-        for i, line in enumerate(lines):
-            try:
-                tmp1, tmp2, label = line[:-1].split()
-            except ValueError:
-                logger.warning(
-                    'ignoring line "%s" in file %s at line %i' % (line, name, i + 1)
-                )
-                continue
-            t1 = float(tmp1)
-            t2 = float(tmp2)
+        for (t1, t2, label) in data:
             if label[-1] == "\r":
                 label = label[:-1]
             if len(time) == 0:
                 time.append(t1)
             else:
                 if time[-1] != t1:
-                    logger.warning(
-                        'noncontiguous label "%s" in file %s at line %i, fixing'
-                        % (label, name, i + 1)
-                    )
+                    logger.warning(f"noncontiguous label {label}")
             dur = t2 - time[-1]
             if dur > 0:
                 time.append(t2)
                 value.append(label)
             elif dur == 0:
-                logger.warning(
-                    'zero-length label "%s" in file %s at line %i, ignoring'
-                    % (label, name, i + 1)
-                )
+                logger.warning(f"zero-length label {label}")
             else:
                 raise LabreadError(
                     "label file contains times that are not monotonically increasing"
@@ -261,18 +246,37 @@ class Partition(Track):
         if time[0] != 0:
             logger.warning("moving first label boundary to zero")
             time[0] = 0
-            # or insert a first label
-            # time.insert(0, 0)
-            # value.insert(0, default_label)
         time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
-        # assert labels are not longer than 8 characters
-        # value = numpy.array(value, dtype='U16' if label_type is str else numpy.float64)
         value = numpy.array(
             value, dtype="U16"
         )  # if label_type is str else numpy.float64)
         return Partition(
-            time, value, fs=fs, path=name
+            time, value, fs=fs
         )  # u1p to 16 characters (labels could be words)
+
+    @classmethod
+    def read_lab(
+        cls, name: str, fs: int = 300_000, encoding: str = "UTF8"
+    ) -> "Partition":
+        """load times, values from a label file"""
+        with codecs.open(name, "r", encoding=encoding) as f:
+            lines = f.readlines()
+        if len(lines) == 0:
+            raise ValueError("file '{}' is empty".format(name))
+        # label_type = numpy.float64
+        data = []
+        for i, line in enumerate(lines):
+            try:
+                tmp1, tmp2, label = line[:-1].split()
+            except ValueError:
+                logger.warning(
+                    'ignoring line "%s" in file %s at line %i' % (line, name, i + 1)
+                )
+                continue
+            t1 = float(tmp1)  # in second
+            t2 = float(tmp2)  # in second
+            data.append((t1, t2, label))
+        return Partition.create(data, fs)
 
     @classmethod
     def read_partition(cls, name, fs=48000, encoding="UTF8"):
