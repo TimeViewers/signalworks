@@ -223,11 +223,7 @@ class Partition(Track):
         """
         time: list = []
         value: list = []
-        for (
-            t1,
-            t2,
-            label,
-        ) in data:  # tmp1 (milisecond), tmp2 (milisecond), label (string)
+        for (t1, t2, label) in data:
             if label[-1] == "\r":
                 label = label[:-1]
             if len(time) == 0:
