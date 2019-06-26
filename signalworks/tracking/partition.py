@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 import numpy
+
 from signalworks.tracking import LabreadError
 from signalworks.tracking.tracking import Track
 
@@ -216,15 +217,17 @@ class Partition(Track):
     def create(
         cls, data: List[Tuple[float, float, str]], fs: int = 300_000
     ) -> "Partition":
+        """
+        create Partition from a list of alignment.
+        The list consists of tuples in the format of (start time (sec), end time (sec), string label)
+        """
         time: list = []
         value: list = []
         for (
-            tmp1,
-            tmp2,
+            t1,
+            t2,
             label,
         ) in data:  # tmp1 (milisecond), tmp2 (milisecond), label (string)
-            t1 = float(tmp1) / 1000
-            t2 = float(tmp2) / 1000
             if label[-1] == "\r":
                 label = label[:-1]
             if len(time) == 0:
@@ -276,7 +279,7 @@ class Partition(Track):
                 continue
             t1 = float(tmp1)  # in second
             t2 = float(tmp2)  # in second
-            data.append((t1 * 1000, t2 * 1000, label))
+            data.append((t1, t2, label))
         return Partition.create(data, fs)
 
     @classmethod
