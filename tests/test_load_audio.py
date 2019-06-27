@@ -80,7 +80,7 @@ def test_2channels():
     soundfile = pytest.importorskip(  # noqa
         "soundfile", reason="If soundfile is not installed, this test will fail"
     )
-    path = Path(__file__).parents[1] / "data" / "01 Quixotic (Scattle Remix).flac"
+    path = Path(__file__).parents[1] / "data" / "test.flac"
     if is_gitlfs_pointer(path):
         pytest.skip("Audio object is a git lfs pointer")
     multiTrack = load_audio(path)

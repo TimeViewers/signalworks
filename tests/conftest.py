@@ -2,7 +2,7 @@
 from pathlib import Path
 
 import pytest  # noqa: F401
-import signalworks
+
 from signalworks.tracking import Track
 
 
