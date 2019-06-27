@@ -1,28 +1,34 @@
 # -*- coding: utf-8 -*-
-from pathlib import Path
 import distutils.spawn
+from pathlib import Path
+
 import numpy as np
 import pytest
-import signalworks
-from signalworks.tracking import Track
+
+from signalworks.tracking import load_audio
 
 
 def has_gitlfs() -> bool:
-    return distutils.spawn.find_executable('git-lfs') is not None
+    return distutils.spawn.find_executable("git-lfs") is not None
+
 
 def is_gitlfs_pointer(path: Path) -> bool:
     return path.stat().st_blocks == 8 and path.stat().st_blksize == 4096
 
+
 xfailif_no_gitlfs = pytest.mark.xfail(
-    not has_gitlfs(), reason='This test requires git-lfs',
+    not has_gitlfs(), reason="This test requires git-lfs"
 )
+
 
 def test_load_wav():
     # read regular wav file
     path = Path(__file__).parents[1] / "data" / "speech-mwm.wav"
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 22050
+
 
 @xfailif_no_gitlfs
 def test_load_au():
@@ -33,9 +39,11 @@ def test_load_au():
     path = Path(__file__).parents[1] / "data" / "test.au"
     if is_gitlfs_pointer(path):
         pytest.skip("Audio object is a git lfs pointer")
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 44100
+
 
 @xfailif_no_gitlfs
 def test_load_TIMIT():
@@ -46,9 +54,11 @@ def test_load_TIMIT():
     path = Path(__file__).parents[1] / "data" / "test.WAV"
     if is_gitlfs_pointer(path):
         pytest.skip("Audio object is a git lfs pointer")
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 16000
+
 
 @xfailif_no_gitlfs
 def test_load_nis():
@@ -59,9 +69,29 @@ def test_load_nis():
     path = Path(__file__).parents[1] / "data" / "test.nis"
     if is_gitlfs_pointer(path):
         pytest.skip("Audio object is a git lfs pointer")
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 16000
+
+
+@xfailif_no_gitlfs
+def test_2channels():
+    soundfile = pytest.importorskip(  # noqa
+        "soundfile", reason="If soundfile is not installed, this test will fail"
+    )
+    path = Path(__file__).parents[1] / "data" / "01 Quixotic (Scattle Remix).flac"
+    if is_gitlfs_pointer(path):
+        pytest.skip("Audio object is a git lfs pointer")
+    multiTrack = load_audio(path)
+    wave_left = multiTrack["left"]
+    assert np.any(wave_left.value > 0)
+    assert wave_left.fs == 44100
+
+    wave_right = multiTrack["right"]
+    assert np.any(wave_right.value > 0)
+    assert wave_right.fs == 44100
+
 
 @xfailif_no_gitlfs
 def test_load_wa1():
@@ -72,9 +102,11 @@ def test_load_wa1():
     path = Path(__file__).parents[1] / "data" / "test.wa1"
     if is_gitlfs_pointer(path):
         pytest.skip("Audio object is a git lfs pointer")
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 8000
+
 
 @xfailif_no_gitlfs
 def test_load_wa2():
@@ -85,9 +117,11 @@ def test_load_wa2():
     soundfile = pytest.importorskip(  # noqa
         "soundfile", reason="If soundfile is not installed, this test will fail"
     )
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 8000
+
 
 @xfailif_no_gitlfs
 @pytest.mark.xfail(reason="We cannot support this kind of file")
@@ -99,13 +133,15 @@ def test_load_wv1():
     soundfile = pytest.importorskip(  # noqa
         "soundfile", reason="If soundfile is not installed, this test will fail"
     )
-    wave = Track.read(path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 16000
 
+
 @xfailif_no_gitlfs
 @pytest.mark.xfail(reason="We cannot support this kind of file")
-def test_load_wv2(benchmark):
+def test_load_wv2():
     # read WA2 file
     path = Path(__file__).parents[1] / "data" / "test.WV2"
     if is_gitlfs_pointer(path):
@@ -113,6 +149,7 @@ def test_load_wv2(benchmark):
     soundfile = pytest.importorskip(  # noqa
         "soundfile", reason="If soundfile is not installed, this test will fail"
     )
-    wave = benchmark(Track.read, path)
+    multiTrack = load_audio(path)
+    wave = multiTrack["left"]
     assert np.any(wave.value > 0)
     assert wave.fs == 16000
