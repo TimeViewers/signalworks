@@ -2,6 +2,6 @@
 
 """Top-level package for signalworks."""
 
-__author__ = """Alex Kain"""
+__author__ = """Alexander Kain"""
 __email__ = "lxkain@gmail.com"
 __version__ = "0.2.0"

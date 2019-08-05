@@ -389,6 +389,37 @@ class Partition(Track):
         assert par.check()
         return par
 
+    @classmethod
+    def from_Label(cls, lab, empty=''):
+        """convert a Label to a partition, filling out the missing space with the empty label"""
+        from signalworks.tracking.label import Label
+        assert isinstance(lab, Label)
+        time = []
+        value = []
+        # initial gap?
+        if lab.time[0] != 0:
+            time.append(0)
+            value.append(empty)
+        # first label
+        time.append(lab.time[0])
+        value.append(lab.value[0])
+        time.append(lab.time[1])
+        # medial labels
+        for i in range(1, len(lab.value)):
+            a = lab.time[2 * i]
+            if a > time[-1]:
+                value.append(empty)
+                time.append(a)
+            value.append(lab.value[i])
+            time.append(lab.time[2 * i + 1])
+        # final gap?
+        if time[-1] != lab.duration:
+            value.append(empty)
+            time.append(lab.duration)
+        par = Partition(numpy.array(time, dtype=TIME_TYPE), numpy.array(value), lab.fs, path=lab.path)
+        par.check()
+        return par
+
     def __getitem__(self, index):
         return self._time[index], self._value[index], self._time[index + 1]
 
