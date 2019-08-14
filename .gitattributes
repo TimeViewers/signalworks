@@ -1,1 +1,12 @@
 *.au filter=lfs diff=lfs merge=lfs -text
+data/*.edf filter=lfs diff=lfs merge=lfs -text
+data/*.lab filter=lfs diff=lfs merge=lfs -text
+data/*.WV1 filter=lfs diff=lfs merge=lfs -text
+data/*.WV2 filter=lfs diff=lfs merge=lfs -text
+data/*.au filter=lfs diff=lfs merge=lfs -text
+data/*.flac filter=lfs diff=lfs merge=lfs -text
+data/*.nis filter=lfs diff=lfs merge=lfs -text
+data/*.wa1 filter=lfs diff=lfs merge=lfs -text
+data/*.wa2 filter=lfs diff=lfs merge=lfs -text
+data/*.wav filter=lfs diff=lfs merge=lfs -text
+data/*.WAV filter=lfs diff=lfs merge=lfs -text

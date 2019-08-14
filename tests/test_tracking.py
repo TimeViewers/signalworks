@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pytest  # noqa: F401
+
 from signalworks import dsp
 from signalworks.tracking.wave import Wave
 
 
 def test_spectrogram(speech_track, benchmark):
+    if speech_track is None:
+        pytest.skip("the test need wavefile")
     frame_size = 0.030
     half = frame_size * speech_track.fs // 2
     centers = np.round(np.linspace(half, speech_track.duration - half, 1000)).astype(
