@@ -21,9 +21,12 @@ xfailif_no_gitlfs = pytest.mark.xfail(
 )
 
 
+@xfailif_no_gitlfs
 def test_load_wav():
     # read regular wav file
     path = Path(__file__).parents[1] / "data" / "speech-mwm.wav"
+    if is_gitlfs_pointer(path):
+        pytest.skip("Audio object is a git lfs pointer")
     multiTrack = load_audio(path)
     wave = multiTrack["left"]
     assert np.any(wave.value > 0)
