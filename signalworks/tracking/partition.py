@@ -394,6 +394,8 @@ class Partition(Track):
         """convert a Label to a partition, filling out the missing space with the empty label"""
         from signalworks.tracking.label import Label
         assert isinstance(lab, Label)
+        if len(lab.time) == 0:
+            return Partition(numpy.array([0, lab.duration], dtype=TIME_TYPE), numpy.array([empty]), lab.fs, path=lab.path)
         time = []
         value = []
         # initial gap?

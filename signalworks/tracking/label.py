@@ -18,25 +18,20 @@ class Label(Track):
 
     def check(self):
         """value[k] has beginning and ending times time[2*k] and time[2*k+1]"""
+        # check time
         assert isinstance(self._time, numpy.ndarray)
         assert self._time.ndim == 1
         assert self._time.dtype == TIME_TYPE
-        # assert (numpy.diff(self._time.astype(numpy.float)) >= 0).all(),\
-        # "times must be (non-strictly) monotonically increasing"
-        if not (numpy.diff(self._time.astype(numpy.float)) >= 0).all():
-            logger.warning(
-                "Label times must be (non-strictly) monotonically increasing"
-            )
+        assert len(self._time) % 2 == 0
+        assert (self._time[1::2] - self._time[::2] > 0).all(), "zero-duration labels are not permitted"
+        assert (numpy.diff(self._time[::2]) > 0).all()
+        assert (numpy.diff(self._time[1::2]) > 0).all()
+        # but abutting labels are permitted, i.e. t[2] == t[1]
+        # check value
         assert isinstance(self._value, numpy.ndarray)
         # assert self._value.ndim == 1 # TODO: can I remove this?
         assert isinstance(self._fs, int)
         assert self._fs > 0
-        assert (
-            numpy.diff(self._time[::2]) > 0
-        ).all(), (
-            "zero-duration labels are not permitted (but abutting labels are permitted)"
-        )
-        # this means an empty partition contains one time value at 0!!!
         assert len(self._time) == 2 * len(
             self._value
         ), "length of time and value *2 must match"
