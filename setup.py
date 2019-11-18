@@ -34,11 +34,6 @@ extras_require = {
 }
 
 extras_require["dev"] = list(chain.from_iterable(chain(extras_require.values())))
-extras_require["full"] = list(
-    chain.from_iterable(
-        chain(extras_require["label"] + extras_require["extended_audio"])
-    )
-)
 
 setup(
     author="Alex Kain",
@@ -64,6 +59,6 @@ setup(
     setup_requires=["pytest-runner"],
     test_suite="tests",
     url="https://github.com/lxkain/signalworks",
-    version="0.2.0",
+    version="0.2.1",
     zip_safe=False,
 )

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import List, Tuple
 
 import numpy
-
 from signalworks.tracking import LabreadError
 from signalworks.tracking.tracking import Track
 
@@ -201,14 +200,17 @@ class Partition(Track):
         if ext in ("lab", "dem", "rec"):
             return cls.read_lab(name, fs)
         elif ext == "textgrid":
-            return cls.read_textgrid(name, fs)
+            # return cls.read_textgrid(name, fs)
+            raise NotImplementedError
+
         else:
             try:
                 return cls.read_lab(name, fs)
             except FileNotFoundError:  # TODO: need to catch more exceptions?
                 pass
             try:
-                return cls.read_textgrid(name, fs)
+                # return cls.read_textgrid(name, fs)
+                raise NotImplementedError
             except FileNotFoundError:  # TODO: need to catch more exceptions?
                 pass
             raise ValueError("file '{}' has unknown format".format(name))
@@ -227,6 +229,10 @@ class Partition(Track):
             if label[-1] == "\r":
                 label = label[:-1]
             if len(time) == 0:
+                # handle case of partitions not starting at 0 by inserting empty segment
+                if t1 != 0:
+                    time.append(0)
+                    value.append("")
                 time.append(t1)
             else:
                 if time[-1] != t1:
@@ -243,9 +249,7 @@ class Partition(Track):
                 )
         if len(time) == 0:
             raise (Exception("file is empty or all lines were ignored"))
-        if time[0] != 0:
-            logger.warning("moving first label boundary to zero")
-            time[0] = 0
+
         time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
         value = numpy.array(
             value, dtype="U16"
@@ -390,12 +394,18 @@ class Partition(Track):
         return par
 
     @classmethod
-    def from_Label(cls, lab, empty=''):
+    def from_Label(cls, lab, empty=""):
         """convert a Label to a partition, filling out the missing space with the empty label"""
         from signalworks.tracking.label import Label
+
         assert isinstance(lab, Label)
         if len(lab.time) == 0:
-            return Partition(numpy.array([0, lab.duration], dtype=TIME_TYPE), numpy.array([empty]), lab.fs, path=lab.path)
+            return Partition(
+                numpy.array([0, lab.duration], dtype=TIME_TYPE),
+                numpy.array([empty]),
+                lab.fs,
+                path=lab.path,
+            )
         time = []
         value = []
         # initial gap?
@@ -418,7 +428,12 @@ class Partition(Track):
         if time[-1] != lab.duration:
             value.append(empty)
             time.append(lab.duration)
-        par = Partition(numpy.array(time, dtype=TIME_TYPE), numpy.array(value), lab.fs, path=lab.path)
+        par = Partition(
+            numpy.array(time, dtype=TIME_TYPE),
+            numpy.array(value),
+            lab.fs,
+            path=lab.path,
+        )
         par.check()
         return par
 

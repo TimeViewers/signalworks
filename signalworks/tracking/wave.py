@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import numpy
 from scipy.io.wavfile import read as wav_read
@@ -25,7 +25,7 @@ class Wave(Track):
         fs: int,
         duration: int = None,
         offset: int = 0,
-        path: str = None,
+        path: Union[str, Path] = None,
     ) -> None:
         super().__init__(path)
         if path is None:
