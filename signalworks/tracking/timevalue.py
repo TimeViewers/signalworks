@@ -174,19 +174,23 @@ class TimeValue(Track):
         if ext in (".pit", ".nrg", cls.default_suffix):
             self = cls.read_tmv(name, fs)
         elif ext == ".f0":
-            self = cls.read_pitchtier(name, fs)[0]
+            # self = cls.read_pitchtier(name, fs)[0]
+            raise NotImplementedError
         elif ext == ".pitchtier":
-            self = cls.read_pitchtier(name, fs)
+            # self = cls.read_pitchtier(name, fs)
+            raise NotImplementedError
         else:
             self = None
             try:
                 if self is None:
-                    self = cls.read_f0(name, fs)[0]
+                    # self = cls.read_f0(name, fs)[0]
+                    raise NotImplementedError
             except FileNotFoundError:  # TODO: need more exceptions?
                 pass
             try:
                 if self is None:
-                    self = cls.read_pitchtier(name, fs)
+                    # self = cls.read_pitchtier(name, fs)
+                    raise NotImplementedError
             except FileNotFoundError:  # TODO: need more exceptions?
                 pass
             if self is None:

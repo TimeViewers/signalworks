@@ -174,7 +174,8 @@ class Event(Track):
         if ext == ".pml" or ext == cls.default_suffix:
             self = cls.read_pml(name, fs)
         elif ext == ".pp":
-            self = cls.read_PointProcess(name, fs)
+            # self = cls.read_PointProcess(name, fs)
+            raise NotImplementedError
         else:
             raise ValueError("file '{}' has unknown format".format(name))
         if duration:
