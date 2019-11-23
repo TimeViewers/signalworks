@@ -5,7 +5,7 @@ import numpy
 from signalworks.tracking.error import LabreadError
 from signalworks.tracking.tracking import Track
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 TIME_TYPE = numpy.int64
@@ -23,7 +23,9 @@ class Label(Track):
         assert self._time.ndim == 1
         assert self._time.dtype == TIME_TYPE
         assert len(self._time) % 2 == 0
-        assert (self._time[1::2] - self._time[::2] > 0).all(), "zero-duration labels are not permitted"
+        assert (
+            self._time[1::2] - self._time[::2] > 0
+        ).all(), "zero-duration labels are not permitted"
         assert (numpy.diff(self._time[::2]) > 0).all()
         assert (numpy.diff(self._time[1::2]) > 0).all()
         # but abutting labels are permitted, i.e. t[2] == t[1]

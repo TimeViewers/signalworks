@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Dict, Optional, Tuple, Type, Union
 
 import numpy
 from scipy.io.wavfile import read as wav_read
@@ -10,7 +10,7 @@ from scipy.signal import resample_poly
 from signalworks.tracking.error import MultiChannelError
 from signalworks.tracking.tracking import Track
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
@@ -30,8 +30,19 @@ class Wave(Track):
         super().__init__(path)
         if path is None:
             path = str(id(self))
-        self.min = None
-        self.max = None
+        # self.min = None
+        # self.max = None
+        if numpy.issubdtype(value.dtype, numpy.integer):
+            info = numpy.iinfo(value.dtype)
+            self.min = info.min
+            self.max = info.max
+        elif numpy.issubdtype(value.dtype, numpy.floating):
+            self.min = -1.0
+            self.max = 1.0
+        else:
+            logging.error(f"Wave dtype {value.dtype} not supported")
+            raise NotImplementedError
+
         # TODO: what happens if path is None
         self.path = Path(path).with_suffix(self.default_suffix)
         assert isinstance(value, numpy.ndarray)
@@ -252,30 +263,83 @@ class Wave(Track):
             name += cls.default_suffix
         return cls.read_wav(name)
 
-    @classmethod
-    def read_wav(cls, path, channel=None, mmap=False):
-        """load waveform from file"""
+    @staticmethod
+    def _load_from_scipy(
+        path: Path, mmap: bool = False, **kwargs: Dict[Any, Any]
+    ) -> Optional[Tuple[int, numpy.ndarray]]:
         try:
             fs, value = wav_read(path, mmap=mmap)
-        except ValueError:
-            try:
-                import soundfile as sf
+        except ValueError as err:
+            logger.error("Scipy was unable to read this file, trying other methods...")
+            logger.error(err)
+            return None
+        return fs, value
 
-                value, fs = sf.read(path, dtype="int16")
-            except ImportError:
-                logging.error(
-                    f"Scipy was unable to import {path}, "
-                    f"try installing soundfile python package for more compatability"
-                )
-                raise ImportError
-            except RuntimeError:
-                raise RuntimeError(f"Unable to import audio file {path}")
+    @staticmethod
+    def _load_from_soundfile(
+        path: Path, dtype: Type = numpy.int16, **kwargs: Dict[Any, Any]
+    ) -> Optional[Tuple[int, numpy.ndarray]]:
+        logger.info(f"Attempting to load {path} via soundfile library")
+        try:
+            import soundfile as sf
+
+            value, fs = sf.read(path, dtype=dtype)
+        except ImportError:
+            logger.error(
+                "Attempted to load file using soundfile library, library not installed"
+            )
+            return None
+        except RuntimeError as err:
+            logger.error(f"Soundfile was unable to import {path}")
+            logger.error(err)
+            return None
+        return fs, value
+
+    @staticmethod
+    def _load_from_sphfile(
+        path: Path, **kwargs: Dict
+    ) -> Optional[Tuple[int, numpy.ndarray]]:
+        logger.info(f"Attempting to load {path} via sphfile library")
+        try:
+            from sphfile import SPHFile
+
+            audio = SPHFile(path)
+            fs = audio.format["sample_rate"]
+        except ImportError:
+            logger.error("SPHFile library not found")
+            return None
+        # TODO: catch error importing file
+        return fs, audio.content
+
+    @classmethod
+    def read_wav(
+        cls, path: Path, channel: Optional[int] = None, mmap: bool = False
+    ) -> "Wave":
+        """load waveform from file"""
+
+        methods = [
+            Wave._load_from_scipy,
+            Wave._load_from_soundfile,
+            Wave._load_from_sphfile,
+        ]
+
+        for load_method in methods:
+            output = load_method(path, mmap=mmap)  # type: ignore
+            if output is not None:
+                fs, value = output
+                break
+        else:
+            logger.error(
+                f"Unable to import audio file, suggest installing soundfile audio library"
+            )
+            raise RuntimeError(f"Unable to import audio file {path}")
+
         if value.ndim == 1:
             if channel is not None and channel != 0:
                 raise MultiChannelError(
                     f"cannot select channel {channel} from monaural file {path}"
                 )
-        if value.ndim == 2:
+        elif value.ndim == 2:
             if channel is None:
                 raise MultiChannelError(
                     f"must select channel when loading file {path} with {value.shape[1]} channels"
@@ -288,23 +352,6 @@ class Wave(Track):
                     f"{path} with {value.shape[1]} channels"
                 )
         wav = Wave(value, fs, path=path)
-        if value.dtype == numpy.dtype(numpy.int16):
-            wav.min = -32767
-            wav.max = 32768
-        elif value.dtype == numpy.dtype(numpy.int32):
-            wav.min = -2147483648
-            wav.max = 2147483647
-        elif value.dtype == numpy.dtype(numpy.uint8):
-            wav.min = 0
-            wav.max = 255
-        elif value.dtype in set(
-            [numpy.dtype(numpy.float64), numpy.dtype(numpy.float32)]
-        ):
-            wav.max = 1.0
-            wav.min = -1.0
-        else:
-            logging.error(f"Wave dtype {value.dtype} not supported")
-            raise NotImplementedError
         return wav
 
     wav_read = read_wav

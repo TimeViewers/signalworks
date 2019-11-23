@@ -14,7 +14,7 @@ class MultiTrack(UserDict):
     def __init__(self, mapping=None):
         if mapping is None:
             mapping = UserDict()
-        UserDict.__init__(self, mapping)
+        super().__init__(mapping)
         if __debug__:  # long assert - TODO: do this on mapping, and then assign
             self.check()
 

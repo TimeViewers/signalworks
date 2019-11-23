@@ -18,7 +18,7 @@ from .wave import Wave  # noqa
 
 from .multitrack import MultiTrack  # isort:skip
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 

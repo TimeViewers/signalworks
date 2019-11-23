@@ -159,7 +159,7 @@ class Track(MetaTrack):
         ):
             channels = None
             mmap = False
-            return Wave.wav_read(path, channels, mmap)
+            return Wave.wav_read(path, channels, mmap)  # type: ignore
         elif suffix == ".tmv":
             return TimeValue.read_tmv(path)  # for now, handle nans
         elif suffix == ".lab":
@@ -171,7 +171,7 @@ class Track(MetaTrack):
         else:
             channels = None
             mmap = False
-            return Wave.wav_read(path, channels, mmap)
+            return Wave.wav_read(path, channels, mmap)  # type: ignore
 
     def write(self, name, *args, **kwargs):
         """Saves object to name, adding default extension if missing."""
