@@ -175,14 +175,14 @@ def spectrogram(
     wav: Wave,
     frame_size: float,
     frame_rate: float,
-    window: signal.hann = signal.hann,
-    NFFT: str = "nextpow2",
+    window: Callable[[np.ndarray], np.ndarray] = signal.hann,
+    NFFT: Optional[int] = None,
     normalized: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """return log-magnitude spectrogram in dB"""
     ftr = frame(wav, frame_size, frame_rate)
     x = ftr.value * window(ftr.value.shape[1])
-    if NFFT == "nextpow2":
+    if NFFT is None:
         NFFT = 2 ** nextpow2(x.shape[1])
     M = np.abs(rfft(x, NFFT))
     np.clip(M, 1e-12, None, out=M)
@@ -197,12 +197,13 @@ def spectrogram(
 
 
 def spectrogram_centered(
-    wav: Wave,  # used by rendering
+    wav: Wave,
     frame_size: float,
     time: np.ndarray,
-    window: signal.hann = signal.hann,
-    NFFT: str = "nextpow2",
+    window: Callable[[np.ndarray], np.ndarray] = signal.hann,
+    NFFT: Optional[int] = None,
     normalized: bool = False,
+    pre_emphasis: Optional[float] = None
 ) -> Tuple[np.ndarray, np.ndarray]:
     """return log-magnitude spectrogram in dB"""
     s = wav.value / np.abs(
@@ -212,7 +213,7 @@ def spectrogram_centered(
     ftr = frame_centered(s, time, int(round(frame_size * wav.fs)))
     assert ftr.dtype == np.float
     ftr *= window(ftr.shape[1])
-    if NFFT == "nextpow2":
+    if NFFT is None:
         NFFT = 2 ** nextpow2(ftr.shape[1])
     M = np.abs(rfft(ftr, NFFT))
     np.clip(M, 1e-16, None, out=M)
@@ -220,8 +221,6 @@ def spectrogram_centered(
     if normalized:
         M[:] = (M.T - np.min(M, axis=1)).T
         M[:] = (M.T / np.max(M, axis=1)).T
-        # assert np.all(M.min(axis=1) == 0)
-        # assert np.all(M.max(axis=1) == 1)
     frequency = np.arange(M.shape[1]) / M.shape[1] * wav.fs / 2
     return M, frequency
 
@@ -264,9 +263,9 @@ def correlogram(
     return R, ftr.time, frequency
 
 
-def nextpow2(i: Union[int, float]) -> int:
+def nextpow2(i: int) -> int:
     """returns the first P such that 2**P >= abs(N)"""
-    return int(ceil(log2(i)))
+    return i.bit_length()
 
 
 #
