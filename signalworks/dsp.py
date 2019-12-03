@@ -2,6 +2,7 @@
 """
 Digital Signal Processing
 """
+import logging
 from typing import Callable, Optional, Tuple
 
 import numba
@@ -9,6 +10,8 @@ import numpy as np
 from numpy.fft import fft, ifft, irfft, rfft
 from scipy import signal, stats
 from signalworks.tracking import TimeValue, Wave
+
+logger = logging.getLogger(__name__)
 
 # TODO: make this "tracking"-free (?), and all times are in samples
 
@@ -205,10 +208,19 @@ def spectrogram_centered(
     pre_emphasis: Optional[float] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """return log-magnitude spectrogram in dB"""
+
     s = wav.value / np.abs(
         np.max(wav.value)
     )  # make float by normalizing and later clipping is more uniform
     assert s.max() == 1
+
+    if pre_emphasis is not None:
+        if pre_emphasis < 0.0 or pre_emphasis > 1.0:
+            logger.warning(
+                f"Pre-Emphasis Filter Value of {pre_emphasis} is outside of 0-1 range, ignoring."
+            )
+        else:
+            s -= pre_emphasis * np.roll(s, -1)
     ftr = frame_centered(s, time, int(round(frame_size * wav.fs)))
     assert ftr.dtype == np.float
     ftr *= window(ftr.shape[1])
