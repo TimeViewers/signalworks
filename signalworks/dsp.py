@@ -2,8 +2,7 @@
 """
 Digital Signal Processing
 """
-from math import ceil, log2
-from typing import Tuple, Union
+from typing import Callable, Optional, Tuple
 
 import numba
 import numpy as np
@@ -203,7 +202,7 @@ def spectrogram_centered(
     window: Callable[[np.ndarray], np.ndarray] = signal.hann,
     NFFT: Optional[int] = None,
     normalized: bool = False,
-    pre_emphasis: Optional[float] = None
+    pre_emphasis: Optional[float] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
     """return log-magnitude spectrogram in dB"""
     s = wav.value / np.abs(
