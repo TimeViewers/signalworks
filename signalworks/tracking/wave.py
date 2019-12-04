@@ -26,6 +26,21 @@ class Wave(Track):
         offset: int = 0,
         path: Optional[Path] = None,
     ) -> None:
+        """Initializer for wave track object
+
+        Parameters
+        ----------
+        value : np.ndarray
+            orientation of array should be [samples, n_channels]
+        fs : int
+            sample rate of the signal
+        duration : Optional[int], optional
+            numer of samples in the signal, typically automatically calculated, by default None
+        offset : int, optional
+            initial offset of the signal, by default 0
+        path : Optional[Path], optional
+            underlying path for file referenced, by default None
+        """
         super().__init__(path)
 
         if path is None:
