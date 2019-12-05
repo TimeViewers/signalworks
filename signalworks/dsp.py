@@ -264,20 +264,20 @@ def spectrogram_centered(
         Spectrogram matrix and a corresponding array of frequency values
     """
 
+    if normalize_signal:
+        s = wav.value / np.abs(np.max(wav.value))
+    else:
+        s = wav.value.astype(float)
+
     # When dealing with multi-channel audio
     if wav.value.ndim > 1:
         # if an aggregation method is provided, use that to squash data together
         if channel_aggregate is not None:
-            s = channel_aggregate(wav.value, axis=0).astype(float)  # type: ignore
+            s = channel_aggregate(s, axis=0)  # type: ignore
 
         # if no aggregation method is provided, and no channel is provided, grab the first channel
         else:
-            s = wav.value[:, channel].astype(float)
-
-    if normalize_signal:
-        s = wav.value / np.abs(
-            np.max(wav.value)
-        )  # make float by normalizing and later clipping is more uniform
+            s = s[:, channel]
 
     if pre_emphasis is not None:
         s -= pre_emphasis * np.roll(s, -1)
