@@ -51,16 +51,16 @@ def load_audio(
             raise MultiChannelError(
                 f"cannot select channel {channel} from monaural file {path}"
             )
-        multiTrack[channel_names[0]] = Wave(value, fs, path=str(path))
+        multiTrack[channel_names[0]] = Wave(value, fs, path=path)
     if value.ndim == 2:
 
         if channel is None:
-            multiTrack[channel_names[0]] = Wave(value[:, 0], fs, path=str(path))
-            multiTrack[channel_names[1]] = Wave(value[:, 1], fs, path=str(path))
+            multiTrack[channel_names[0]] = Wave(value[:, 0], fs, path=path)
+            multiTrack[channel_names[1]] = Wave(value[:, 1], fs, path=path)
         else:
             try:
                 multiTrack[channel_names[channel]] = Wave(
-                    value[:, channel], fs, path=str(path)
+                    value[:, channel], fs, path=path
                 )
             except IndexError:
                 raise MultiChannelError(
@@ -71,18 +71,12 @@ def load_audio(
     for k in multiTrack.keys():
         value = multiTrack[k].value
 
-        if value.dtype == np.dtype(np.int16):
-            multiTrack[k].min = -32767
-            multiTrack[k].max = 32768
-        elif value.dtype == np.dtype(np.int32):
-            multiTrack[k].min = -2147483648
-            multiTrack[k].max = 2147483647
-        elif value.dtype == np.dtype(np.uint8):
-            multiTrack[k].min = 0
-            multiTrack[k].max = 255
-        elif value.dtype in set([np.dtype(np.float64), np.dtype(np.float32)]):
-            multiTrack[k].max = 1.0
+        if np.issubdtype(value.dtype, np.integer):
+            multiTrack[k].min = np.iinfo(value.dtype).min
+            multiTrack[k].max = np.iinfo(value.dtype).max
+        elif np.issubdtype(value.dtype, np.floating):
             multiTrack[k].min = -1.0
+            multiTrack[k].max = 1.0
         else:
             logging.error(f"Wave dtype {value.dtype} not supported")
             raise NotImplementedError
