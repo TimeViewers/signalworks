@@ -1,6 +1,6 @@
 import logging
 import os
-from collections import Iterable
+from collections.abc import Iterable
 
 import numpy
 from signalworks.tracking import Partition
