@@ -177,7 +177,7 @@ def spectrogram(
     wav: Wave,
     frame_size: float,
     frame_rate: float,
-    window: Callable[[np.ndarray], np.ndarray] = signal.hann,
+    window: Callable[[int], np.ndarray] = signal.hann,
     NFFT: Optional[int] = None,
     normalized: bool = False,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -200,39 +200,105 @@ def spectrogram(
 
 def spectrogram_centered(
     wav: Wave,
-    frame_size: float,
+    frame_period: float,
     time: np.ndarray,
-    window: Callable[[np.ndarray], np.ndarray] = signal.hann,
+    window: Callable[[int], np.ndarray] = signal.hann,
     NFFT: Optional[int] = None,
-    normalized: bool = False,
+    normalize_signal: bool = False,
+    normalize_output: bool = False,
     pre_emphasis: Optional[float] = None,
+    channel: int = 0,
+    channel_aggregate: Optional[Callable[[np.ndarray], np.ndarray]] = None,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """return log-magnitude spectrogram in dB"""
+    """return log-magnitude spectrogram in dB
 
-    s = wav.value / np.abs(
-        np.max(wav.value)
-    )  # make float by normalizing and later clipping is more uniform
-    assert s.max() == 1
+    Parameters
+    ----------
+    wav : Wave
+        Wave object that contains the information you want to determine the
+        log-magnitude spectrogram of
+    frame_period : float
+        The length of the frame in seconds
+    time : np.ndarray
+        A numpy array representing the time values (in samples, not seconds) of
+        where you want frames centered about, typically evenly spaced over a range
+    window : Callable[[int], np.ndarray], optional
+        The Windowing function to apply to each frame
+        Possible pre-made functions are shown in scipy.signal.windows
+        by default signal.hann
+    NFFT : Optional[int], optional
+        Number of FFT points to use when for the rfft calculation
+        If None, the NFFT is computed based on the number of samples on each frame
+        It is suggested that this value be a power of 2
+        by default None
+    normalize_signal : bool, optional
+        scales the signal so that it ranges between -1 and 1
+        by default False
+    normalize_output : bool, optional
+        Adjusts the value of the spectrogram so that it's between 0 and 1
+        by default False
+    pre_emphasis : Optional[float], optional
+        if a value is provided, it is a constant to apply for a pre-emphasis
+        filter where x´[t] = x[t] - α * x[t-1] where α is the pre-emphasis value
+        values 0.0 <= α <= 1.0,
+        by default None
+    channel : int
+        Specifies which channel in the Wave object to use
+
+        The value here is ignored if a channel_aggregate method is provided,
+        or if Wave track has only one channel
+        by default 0
+    channel_aggregate : Optional[Callable[[np.ndarray], np.ndarray]], optional
+        If the Wave track has multiple channels, use this method to aggregate
+        the channels together.  A typical usecase would be to pass np.average;
+        atlernate use-cases may be np.maximum or np.minimum. The callable method
+        must support the passing of an axis argument.
+
+        This method will supersede the channel argument, but it is ignored if
+        Wave object has only one channel
+        by default None
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        Spectrogram matrix and a corresponding array of frequency values
+    """
+
+    # When dealing with multi-channel audio
+    if wav.value.ndim > 1:
+        # if an aggregation method is provided, use that to squash data together
+        if channel_aggregate is not None:
+            s = channel_aggregate(wav.value, axis=0).astype(float)  # type: ignore
+
+        # if no aggregation method is provided, and no channel is provided, grab the first channel
+        else:
+            s = wav.value[:, channel].astype(float)
+
+    if normalize_signal:
+        s = wav.value / np.abs(
+            np.max(wav.value)
+        )  # make float by normalizing and later clipping is more uniform
 
     if pre_emphasis is not None:
-        if pre_emphasis < 0.0 or pre_emphasis > 1.0:
-            logger.warning(
-                f"Pre-Emphasis Filter Value of {pre_emphasis} is outside of 0-1 range, ignoring."
-            )
-        else:
-            s -= pre_emphasis * np.roll(s, -1)
-    ftr = frame_centered(s, time, int(round(frame_size * wav.fs)))
-    assert ftr.dtype == np.float
-    ftr *= window(ftr.shape[1])
+        s -= pre_emphasis * np.roll(s, -1)
+
+    ftr = frame_centered(s, time, int(round(frame_period * wav.fs)))
+
     if NFFT is None:
-        NFFT = 2 ** nextpow2(ftr.shape[1])
-    M = np.abs(rfft(ftr, NFFT))
-    np.clip(M, 1e-16, None, out=M)
+        NFFT = 2 ** ftr.shape[1].bit_length()
+
+    ftr *= window(ftr.shape[1])
+    M = np.absolute(rfft(ftr, n=NFFT))
+    np.clip(M, np.finfo(M.dtype).eps, None, out=M)
+
     M[:] = np.log10(M) * 20
-    if normalized:
+    # faster than np.linspace
+    frequency = np.arange(M.shape[1]) / M.shape[1] * wav.fs / 2
+
+    if normalize_output:
         M[:] = (M.T - np.min(M, axis=1)).T
         M[:] = (M.T / np.max(M, axis=1)).T
-    frequency = np.arange(M.shape[1]) / M.shape[1] * wav.fs / 2
+
     return M, frequency
 
 
