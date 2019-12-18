@@ -267,13 +267,13 @@ def spectrogram_centered(
     if normalize_signal:
         s = wav.value / np.abs(np.max(wav.value))
     else:
-        s = wav.value.astype(float)
+        s = wav.value.astype(np.float64)
 
     # When dealing with multi-channel audio
-    if wav.value.ndim > 1:
+    if wav.value.shape[1] > 1:
         # if an aggregation method is provided, use that to squash data together
         if channel_aggregate is not None:
-            s = channel_aggregate(s, axis=0)  # type: ignore
+            s = channel_aggregate(s, axis=1)  # type: ignore
 
         # if no aggregation method is provided, and no channel is provided, grab the first channel
         else:
@@ -282,7 +282,7 @@ def spectrogram_centered(
     if pre_emphasis is not None:
         s -= pre_emphasis * np.roll(s, -1)
 
-    ftr = frame_centered(s, time, int(round(frame_period * wav.fs)))
+    ftr = frame_centered(s.flatten(), time, int(round(frame_period * wav.fs)))
 
     if NFFT is None:
         NFFT = 2 ** ftr.shape[1].bit_length()
@@ -291,7 +291,7 @@ def spectrogram_centered(
     M = np.absolute(rfft(ftr, n=NFFT))
     np.clip(M, np.finfo(M.dtype).eps, None, out=M)
 
-    M[:] = np.log10(M) * 20
+    M[:] = 1 + np.log10(M) * 20
     # faster than np.linspace
     frequency = np.arange(M.shape[1]) / M.shape[1] * wav.fs / 2
 
