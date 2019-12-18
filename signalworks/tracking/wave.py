@@ -1,7 +1,8 @@
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
-from typing import Optional
+from typing import DefaultDict, Optional
 
 import numpy as np
 from scipy.io.wavfile import read as wav_read
@@ -52,11 +53,16 @@ class Wave(Track):
             self.min = np.iinfo(value.dtype).min
             self.max = np.iinfo(value.dtype).max
         elif np.issubdtype(value.dtype, np.floating):
+            # normalize floating point audio to -1:1
+            max_value = np.absolute(value).max()
+            # if 0 < max_value <= 1.0 then our audio is likely scaled properly as is..
+            if max_value > 1.0:
+                value = value / (max_value + np.finfo(value.dtype).eps)
             self.min = -1.0
             self.max = 1.0
 
         assert isinstance(value, np.ndarray)
-        assert 1 <= value.ndim, "only a single channel is supported"
+        assert 2 == value.ndim, "values need to be a 2D array"
         assert isinstance(fs, int)
         assert fs > 0
         self._value = value
@@ -277,13 +283,29 @@ class Wave(Track):
         """load waveform from file"""
         try:
             fs, value = wav_read(path, mmap=mmap)
+            if np.ndim(value) == 1:
+                value = value.reshape(-1, 1)
         except ValueError:
             try:
+                if mmap:
+                    logger.warning("mmap is not supported by soundfile, ignoring")
                 import soundfile as sf
+
+                audioEncodings: DefaultDict[str, str] = defaultdict(lambda: "float64")
+                audioEncodings["PCM_S8"] = "int16"  # soundfile does not support int8
+                audioEncodings["PCM_U8"] = "int16"  # soundfile does not support uint16
+                audioEncodings["PCM_16"] = "int16"
+                audioEncodings["PCM_24"] = "int32"  # there is no np.int24
+                audioEncodings["PCM_32"] = "int32"
+                audioEncodings["FLOAT"] = "float32"
+                audioEncodings["DOUBLE"] = "float64"
+                file_info = sf.info(path)
+
+                value, fs = sf.read(
+                    path, dtype=audioEncodings[file_info.subtype], always_2d=True
+                )
             except ImportError:
                 logger.error("Install soundfile for greater audio file compatability")
-            try:
-                value, fs = sf.read(path, dtype="int16")
             except RuntimeError:
                 logger.error("Soundfile was unable to open file")
                 return None
