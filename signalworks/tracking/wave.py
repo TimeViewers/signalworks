@@ -1,16 +1,16 @@
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
-from typing import Optional, Union
+from typing import DefaultDict, Optional
 
-import numpy
+import numpy as np
 from scipy.io.wavfile import read as wav_read
 from scipy.io.wavfile import write as wav_write
 from scipy.signal import resample_poly
-from signalworks.tracking.error import MultiChannelError
 from signalworks.tracking.tracking import Track
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
@@ -21,21 +21,48 @@ class Wave(Track):
 
     def __init__(
         self,
-        value: numpy.ndarray,
+        value: np.ndarray,
         fs: int,
-        duration: int = None,
+        duration: Optional[int] = None,
         offset: int = 0,
-        path: Union[str, Path] = None,
+        path: Optional[Path] = None,
     ) -> None:
+        """Initializer for wave track object
+
+        Parameters
+        ----------
+        value : np.ndarray
+            orientation of array should be [samples, n_channels]
+        fs : int
+            sample rate of the signal
+        duration : Optional[int], optional
+            numer of samples in the signal, typically automatically calculated, by default None
+        offset : int, optional
+            initial offset of the signal, by default 0
+        path : Optional[Path], optional
+            underlying path for file referenced, by default None
+        """
         super().__init__(path)
+
         if path is None:
-            path = str(id(self))
-        self.min = None
-        self.max = None
-        # TODO: what happens if path is None
-        self.path = Path(path).with_suffix(self.default_suffix)
-        assert isinstance(value, numpy.ndarray)
-        assert 1 <= value.ndim, "only a single channel is supported"
+            self.path = (Path.home() / str(id)).with_suffix(self.default_suffix)
+        else:
+            self.path = Path(path).with_suffix(self.default_suffix)
+
+        if np.issubdtype(value.dtype, np.integer):
+            self.min = np.iinfo(value.dtype).min
+            self.max = np.iinfo(value.dtype).max
+        elif np.issubdtype(value.dtype, np.floating):
+            # normalize floating point audio to -1:1
+            max_value = np.absolute(value).max()
+            # if 0 < max_value <= 1.0 then our audio is likely scaled properly as is..
+            if max_value > 1.0:
+                value = value / (max_value + np.finfo(value.dtype).eps)
+            self.min = -1.0
+            self.max = 1.0
+
+        assert isinstance(value, np.ndarray)
+        assert 2 == value.ndim, "values need to be a 2D array"
         assert isinstance(fs, int)
         assert fs > 0
         self._value = value
@@ -43,9 +70,9 @@ class Wave(Track):
         self._offset = (
             offset
         )  # this is required to support heterogenous fs in multitracks
-        self.type: Optional[str] = "Wave"
-        self.label: Optional[str] = f"amplitude-{value.dtype}"
-        if not duration:
+        self.type = "Wave"
+        self.label = f"amplitude-{value.dtype}"
+        if duration is None:
             duration = len(self._value)
         assert len(self._value) <= duration < len(self._value) + 1, (
             "Cannot set duration of a wave to other than a number in "
@@ -64,9 +91,9 @@ class Wave(Track):
 
     def get_time(self):
         return (
-            numpy.arange(len(self._value))
+            np.arange(len(self._value))
             if self._offset == 0
-            else numpy.arange(len(self._value)) + self._offset
+            else np.arange(len(self._value)) + self._offset
         )
 
     def set_time(self, time):
@@ -78,7 +105,7 @@ class Wave(Track):
         return self._value
 
     def set_value(self, value):
-        assert isinstance(value, numpy.ndarray)
+        assert isinstance(value, np.ndarray)
         assert 1 == value.ndim, "only a single channel is supported"
         self._value = value
         if not (len(self._value) <= self._duration < len(self._value) + 1):
@@ -122,15 +149,7 @@ class Wave(Track):
     dtype = property(get_dtype)
 
     def get_bitdepth(self):
-        dtype = self._value.dtype
-        if dtype == numpy.int16:
-            return 16
-        elif dtype == numpy.float32 or dtype == numpy.int32:
-            return 32
-        elif dtype == numpy.float64:
-            return 64
-        else:
-            raise Exception("unknown dtype = %s" % dtype)
+        return self._value.dtype.itemsize * 8
 
     bitdepth = property(get_bitdepth)
 
@@ -148,7 +167,7 @@ class Wave(Track):
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "\n".join(
             [
                 f"value={self.value}",
@@ -160,6 +179,9 @@ class Wave(Track):
             ]
         )
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __len__(self):
         return len(self._value)
 
@@ -167,12 +189,16 @@ class Wave(Track):
         assert type(other) == type(self), "Cannot add Track objects of different types"
         assert self._fs == other._fs, "sampling frequencies must match"
         assert self.value.dtype == other.value.dtype, "dtypes must match"
-        value = numpy.concatenate((self._value, other._value))
+        value = np.concatenate((self._value, other._value))
         return type(self)(value, self.fs)
 
-    def resample(self, fs):
+    def resample(self, fs: int) -> "Wave":
         """resample to a certain fs"""
-        assert isinstance(fs, int)
+
+        if not isinstance(fs, int):
+            logger.error("Resample only supporters integers, ignoring")
+            return self
+
         if fs != self._fs:
             if fs > self._fs:  # upsampling
                 return type(self)(resample_poly(self._value, int(fs / self._fs), 1), fs)
@@ -185,35 +211,35 @@ class Wave(Track):
         """
         return a link (if unchanged) or copy of signal in the specified dtype (often changes bit-depth as well)
         """
-        assert isinstance(source, numpy.ndarray)
+        assert isinstance(source, np.ndarray)
         source_dtype = source.dtype
         assert source_dtype in (
-            numpy.int16,
-            numpy.int32,
-            numpy.float32,
-            numpy.float64,
+            np.int16,
+            np.int32,
+            np.float32,
+            np.float64,
         ), "source must be a supported type"
         assert target_dtype in (
-            numpy.int16,
-            numpy.int32,
-            numpy.float32,
-            numpy.float64,
+            np.int16,
+            np.int32,
+            np.float32,
+            np.float64,
         ), "target must be a supported type"
         if source_dtype == target_dtype:
             return source
         else:  # conversion
-            if source_dtype == numpy.int16:
-                if target_dtype == numpy.int32:
+            if source_dtype == np.int16:
+                if target_dtype == np.int32:
                     return source.astype(target_dtype) << 16
-                else:  # target_dtype == numpy.float32 / numpy.float64:
+                else:  # target_dtype == np.float32 / np.float64:
                     return source.astype(target_dtype) / (1 << 15)
-            elif source_dtype == numpy.int32:
-                if target_dtype == numpy.int16:
+            elif source_dtype == np.int32:
+                if target_dtype == np.int16:
                     return (source >> 16).astype(target_dtype)  # lossy
-                else:  # target_dtype == numpy.float32 / numpy.float64:
+                else:  # target_dtype == np.float32 / np.float64:
                     return source.astype(target_dtype) / (1 << 31)
-            else:  # source_dtype == numpy.float32 / numpy.float64
-                M = numpy.max(numpy.abs(source))
+            else:  # source_dtype == np.float32 / np.float64
+                M = np.max(np.abs(source))
                 limit = 1 - 1e-16
                 if M > limit:
                     factor = limit / M
@@ -222,12 +248,12 @@ class Wave(Track):
                         f"applying scaling of {factor}"
                     )
                     source *= factor
-                if target_dtype == numpy.float32 or target_dtype == numpy.float64:
+                if target_dtype == np.float32 or target_dtype == np.float64:
                     return source.astype(target_dtype)
                 else:
-                    if target_dtype == numpy.int16:
+                    if target_dtype == np.int16:
                         return (source * (1 << 15)).astype(target_dtype)  # dither?
-                    else:  # target_dtype == numpy.int32
+                    else:  # target_dtype == np.int32
                         return (source * (1 << 31)).astype(target_dtype)  # dither?
 
     def convert_dtype(self, target_dtype):
@@ -257,54 +283,36 @@ class Wave(Track):
         """load waveform from file"""
         try:
             fs, value = wav_read(path, mmap=mmap)
+            if np.ndim(value) == 1:
+                value = value.reshape(-1, 1)
         except ValueError:
             try:
+                if mmap:
+                    logger.warning("mmap is not supported by soundfile, ignoring")
                 import soundfile as sf
 
-                value, fs = sf.read(path, dtype="int16")
+                audioEncodings: DefaultDict[str, str] = defaultdict(lambda: "float64")
+                audioEncodings["PCM_S8"] = "int16"  # soundfile does not support int8
+                audioEncodings["PCM_U8"] = "int16"  # soundfile does not support uint16
+                audioEncodings["PCM_16"] = "int16"
+                audioEncodings["PCM_24"] = "int32"  # there is no np.int24
+                audioEncodings["PCM_32"] = "int32"
+                audioEncodings["FLOAT"] = "float32"
+                audioEncodings["DOUBLE"] = "float64"
+                file_info = sf.info(path)
+
+                value, fs = sf.read(
+                    path, dtype=audioEncodings[file_info.subtype], always_2d=True
+                )
             except ImportError:
-                logging.error(
-                    f"Scipy was unable to import {path}, "
-                    f"try installing soundfile python package for more compatability"
-                )
-                raise ImportError
+                logger.error("Install soundfile for greater audio file compatability")
             except RuntimeError:
-                raise RuntimeError(f"Unable to import audio file {path}")
-        if value.ndim == 1:
-            if channel is not None and channel != 0:
-                raise MultiChannelError(
-                    f"cannot select channel {channel} from monaural file {path}"
-                )
-        if value.ndim == 2:
-            if channel is None:
-                raise MultiChannelError(
-                    f"must select channel when loading file {path} with {value.shape[1]} channels"
-                )
-            try:
-                value = value[:, channel]
-            except IndexError:
-                raise MultiChannelError(
-                    f"cannot select channel {channel} from file "
-                    f"{path} with {value.shape[1]} channels"
-                )
+                logger.error("Soundfile was unable to open file")
+                return None
+
+        if channel is not None:
+            value = value[:, channel]
         wav = Wave(value, fs, path=path)
-        if value.dtype == numpy.dtype(numpy.int16):
-            wav.min = -32767
-            wav.max = 32768
-        elif value.dtype == numpy.dtype(numpy.int32):
-            wav.min = -2147483648
-            wav.max = 2147483647
-        elif value.dtype == numpy.dtype(numpy.uint8):
-            wav.min = 0
-            wav.max = 255
-        elif value.dtype in set(
-            [numpy.dtype(numpy.float64), numpy.dtype(numpy.float32)]
-        ):
-            wav.max = 1.0
-            wav.min = -1.0
-        else:
-            logging.error(f"Wave dtype {value.dtype} not supported")
-            raise NotImplementedError
         return wav
 
     wav_read = read_wav
@@ -333,7 +341,7 @@ class Wave(Track):
     #     """wave1 + wave2"""
     #     if self.fs != other.fs:
     #         raise Exception("sampling frequency of waves must match")
-    #     return type(self)(numpy.concatenate((self.va, other.va)), self.fs)  # return correct (child) class
+    #     return type(self)(np.concatenate((self.va, other.va)), self.fs)  # return correct (child) class
 
     # def delete(self, a, b, fade = 0):
     #     pass
@@ -351,8 +359,8 @@ class Wave(Track):
     #         n = round(fade * self.fs)
     #         if n*2 > len(wave.signal):
     #             raise Exception("fade inverval is too large")
-    #         up = numpy.linspace(0, 1, n)
-    #         down = numpy.linspace(1, 0, n)
+    #         up = np.linspace(0, 1, n)
+    #         down = np.linspace(1, 0, n)
     #         p = wave.signal.copy()
     #         p[:n] *= up
     #         p[-n:] *= down
@@ -361,7 +369,7 @@ class Wave(Track):
     #         r = self.signal[a-n:]
     #         r[:n] *= up
     #     else:
-    #         self.signal = numpy.concatenate((self.signal[:a], wave.signal, self.signal[a:]))
+    #         self.signal = np.concatenate((self.signal[:a], wave.signal, self.signal[a:]))
 
     def crossfade(self, wave, length):
         """append wave to self, using a crossfade of a specified length in samples"""
@@ -371,12 +379,12 @@ class Wave(Track):
         assert length > 0
         assert wave.duration >= length
         assert self.duration >= length
-        ramp = numpy.linspace(1, 0, length + 2)[1:-1]  # don't include 0 and 1
+        ramp = np.linspace(1, 0, length + 2)[1:-1]  # don't include 0 and 1
         value = self.value.copy()
         value[-length:] = value[-length:] * ramp + wave.value[:length] * (
             1 - ramp
         )  # TODO: think about dtypes here
-        value = numpy.concatenate((value, wave.value[length:]))
+        value = np.concatenate((value, wave.value[length:]))
         return type(self)(value, self.fs)
 
     # TODO: Test / fix me!
@@ -385,8 +393,8 @@ class Wave(Track):
         logger.warning(
             "time_warping wave, most of the time this is not what is desired"
         )
-        time = numpy.arange(len(self._value))
+        time = np.arange(len(self._value))
         # time = index / self._fs
-        time = numpy.round(numpy.interp(time, x, y)).astype(numpy.int)
+        time = np.round(np.interp(time, x, y)).astype(np.int)
         # index = int(time * self.fs)
         self._value = self._value[time]
