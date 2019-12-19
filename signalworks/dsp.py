@@ -68,7 +68,7 @@ def segment(x, nsize, nrate):
     if len(x) < nsize:
         F = 0
     else:
-        F = (len(x) - nsize) // nrate  # the number of full frames
+        F = (len(x) - nsize) // nrate + 1  # the number of full frames
     assert F >= 0
     X = np.empty((F, nsize), dtype=x.dtype)
     a = 0
