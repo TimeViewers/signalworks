@@ -252,7 +252,7 @@ class Partition(Track):
 
         time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
         value = numpy.array(
-            value, dtype="U16"
+            value, dtype="unicode_"
         )  # if label_type is str else numpy.float64)
         return Partition(
             time, value, fs=fs
@@ -338,7 +338,9 @@ class Partition(Track):
             # value.insert(0, default_label)
         time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
         # assert labels are not longer than 8 characters
-        value = numpy.array(value, dtype="U16" if label_type is str else numpy.float64)
+        value = numpy.array(
+            value, dtype="unicode_" if label_type is str else numpy.float64
+        )
         return Partition(
             time, value, fs=fs
         )  # u1p to 16 characters (labels could be words)
