@@ -4,35 +4,35 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 
-import numpy
+import numpy as np
 from signalworks.tracking import LabreadError
 from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-TIME_TYPE = numpy.int64
+TIME_TYPE = np.int64
 
 
 class Partition(Track):
     default_suffix = ".lab"
 
     def check(self):
-        assert isinstance(self._time, numpy.ndarray)
+        assert isinstance(self._time, np.ndarray)
         assert self._time.ndim == 1
         assert self._time.dtype == TIME_TYPE
-        # assert (numpy.diff(self._time.astype(numpy.float)) > 0).all(),\
+        # assert (np.diff(self._time.astype(np.float)) > 0).all(),\
         #     "times must be strictly monotonically increasing"
-        if not (numpy.diff(self._time.astype(numpy.float)) > 0).all():
+        if not (np.diff(self._time.astype(np.float)) > 0).all():
             logger.warning("Partition: times must be strictly monotonically increasing")
-        assert isinstance(self._value, numpy.ndarray)
+        assert isinstance(self._value, np.ndarray)
         # assert self._value.ndim == 1 # TODO: can I remove this?
         assert isinstance(self._fs, int)
         assert self._fs > 0
         # if len(self._time):
         assert self._time[0] == 0, "partition must begin at time 0"
-        # assert (numpy.diff(self._time) > 0).all(), "zero-duration labels are not permitted"
-        if not (numpy.diff(self._time) > 0).all():
+        # assert (np.diff(self._time) > 0).all(), "zero-duration labels are not permitted"
+        if not (np.diff(self._time) > 0).all():
             logger.warning("Partition: zero-duration labels are not permitted")
         # this means an empty partition contains one time value at 0!!!
         assert (
@@ -53,21 +53,21 @@ class Partition(Track):
         assert self.check()
 
     def get_time(self):
-        # assert (numpy.diff(self._time.astype(numpy.float)) > 0).all(),\
+        # assert (np.diff(self._time.astype(np.float)) > 0).all(),\
         # "times must be strictly monotonically increasing" # in case the user messed with .time[index] directly
-        if not (numpy.diff(self._time.astype(numpy.float)) > 0).all():
+        if not (np.diff(self._time.astype(np.float)) > 0).all():
             logger.warning("get_time times must be strictly monotonically increasing")
         return self._time
 
     def set_time(self, time):
-        assert isinstance(time, numpy.ndarray)
+        assert isinstance(time, np.ndarray)
         assert time.ndim == 1
         assert time.dtype == TIME_TYPE
         if len(time):
             assert time[0] == 0, "partition must begin at time 0"
-            # assert (numpy.diff(time) > 0).all(), "zero-duration labels are not permitted"
-            # assert (numpy.diff(time) >= 0).all(), "zero-duration labels are not permitted"
-            if not (numpy.diff(time) > 0).all():
+            # assert (np.diff(time) > 0).all(), "zero-duration labels are not permitted"
+            # assert (np.diff(time) >= 0).all(), "zero-duration labels are not permitted"
+            if not (np.diff(time) > 0).all():
                 logger.warning("encorter zero-duration labels are not permitted")
             assert (
                 len(time) == len(self._value) + 1
@@ -82,7 +82,7 @@ class Partition(Track):
         return self._value
 
     def set_value(self, value):
-        assert isinstance(value, numpy.ndarray)
+        assert isinstance(value, np.ndarray)
         # assert value.ndim == 1
         assert (
             len(self._time) == len(self._value) + 1
@@ -143,8 +143,8 @@ class Partition(Track):
     # def resample(self, fs):
     #     if fs != self._fs:
     #         factor = fs / self._fs
-    #         self._time = numpy.round(factor * self._time).astype(TIME_TYPE)
-    #         assert (numpy.diff(self._time) > 0).all(),\
+    #         self._time = np.round(factor * self._time).astype(TIME_TYPE)
+    #         assert (np.diff(self._time) > 0).all(),\
     #             "new fs causes times to fold onto themselves due to lack in precision"
     #         self._fs = fs
 
@@ -152,10 +152,10 @@ class Partition(Track):
         """resample to a certain fs"""
         if fs != self._fs:
             factor = fs / self._fs
-            time = numpy.round(factor * self._time).astype(TIME_TYPE)
-            time[-1] = numpy.ceil(factor * self._time[-1])
+            time = np.round(factor * self._time).astype(TIME_TYPE)
+            time[-1] = np.ceil(factor * self._time[-1])
             assert (
-                numpy.diff(time) > 0
+                np.diff(time) > 0
             ).all(), (
                 "new fs causes times to fold onto themselves due to lack in precision"
             )
@@ -250,10 +250,10 @@ class Partition(Track):
         if len(time) == 0:
             raise (Exception("file is empty or all lines were ignored"))
 
-        time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
-        value = numpy.array(
-            value, dtype="unicode_"
-        )  # if label_type is str else numpy.float64)
+        time = np.round(np.array(time) * fs).astype(TIME_TYPE)
+        value = np.array(
+            value, dtype=np.unicode_
+        )  # if label_type is str else np.float64)
         return Partition(
             time, value, fs=fs
         )  # u1p to 16 characters (labels could be words)
@@ -267,7 +267,7 @@ class Partition(Track):
             lines = f.readlines()
         if len(lines) == 0:
             raise ValueError("file '{}' is empty".format(name))
-        # label_type = numpy.float64
+        # label_type = np.float64
         data = []
         for i, line in enumerate(lines):
             try:
@@ -291,7 +291,7 @@ class Partition(Track):
             raise ValueError("file '{}' is empty".format(name))
         time = [0.0]
         value = []
-        label_type = numpy.float64
+        label_type = np.float64
         for i, line in enumerate(lines):
             try:
                 temp, _t, label = line[:-1].split()
@@ -336,11 +336,9 @@ class Partition(Track):
             # or insert a first label
             # time.insert(0, 0)
             # value.insert(0, default_label)
-        time = numpy.round(numpy.array(time) * fs).astype(TIME_TYPE)
+        time = np.round(np.array(time) * fs).astype(TIME_TYPE)
         # assert labels are not longer than 8 characters
-        value = numpy.array(
-            value, dtype="unicode_" if label_type is str else numpy.float64
-        )
+        value = np.array(value, dtype=np.unicode_ if label_type is str else np.float64)
         return Partition(
             time, value, fs=fs
         )  # u1p to 16 characters (labels could be words)
@@ -380,14 +378,14 @@ class Partition(Track):
         from signalworks.tracking.timevalue import TimeValue
 
         assert isinstance(tv, TimeValue)
-        boundary = numpy.where(numpy.diff(tv.value))[0]
-        time = numpy.empty(len(boundary), dtype=tv.time.dtype)
-        value = numpy.empty(len(boundary) + 1, dtype=tv.value.dtype)
+        boundary = np.where(np.diff(tv.value))[0]
+        time = np.empty(len(boundary), dtype=tv.time.dtype)
+        value = np.empty(len(boundary) + 1, dtype=tv.value.dtype)
         duration = tv.duration
         for i in range(len(time)):
             index = boundary[i]
             time[i] = (tv.time[index] + tv.time[index + 1]) / 2
-        time = numpy.concatenate(([0], time, [duration])).astype(TIME_TYPE)
+        time = np.concatenate(([0], time, [duration])).astype(TIME_TYPE)
         value[0] = tv.value[0]
         for i in range(len(boundary)):
             value[i + 1] = tv.value[boundary[i] + 1]
@@ -403,8 +401,8 @@ class Partition(Track):
         assert isinstance(lab, Label)
         if len(lab.time) == 0:
             return Partition(
-                numpy.array([0, lab.duration], dtype=TIME_TYPE),
-                numpy.array([empty]),
+                np.array([0, lab.duration], dtype=TIME_TYPE),
+                np.array([empty]),
                 lab.fs,
                 path=lab.path,
             )
@@ -431,10 +429,7 @@ class Partition(Track):
             value.append(empty)
             time.append(lab.duration)
         par = Partition(
-            numpy.array(time, dtype=TIME_TYPE),
-            numpy.array(value),
-            lab.fs,
-            path=lab.path,
+            np.array(time, dtype=TIME_TYPE), np.array(value), lab.fs, path=lab.path
         )
         par.check()
         return par
@@ -464,10 +459,10 @@ class Partition(Track):
     def __add__(self, other):
         if self._fs != other._fs:
             raise Exception("sampling frequencies must match")
-        time = numpy.hstack(
+        time = np.hstack(
             (self._time, self._time[-1] + other._time[1:])
         )  # other._time[0] == 0
-        value = numpy.hstack((self._value, other._value))
+        value = np.hstack((self._value, other._value))
         # duration = self.duration + other.duration
         return Partition(time, value, self.fs)
 
@@ -488,7 +483,7 @@ class Partition(Track):
 
     def get(self, t):
         """returns current label at time t"""
-        # return self.value[numpy.where((self.time - t) <= 0)[0][-1]] # last one that is <= 0
+        # return self.value[np.where((self.time - t) <= 0)[0][-1]] # last one that is <= 0
         return self._value[
             (self._time.searchsorted(t + 1) - 1).clip(0, len(self._value) - 1)
         ]
@@ -496,20 +491,20 @@ class Partition(Track):
     def append(self, time, value):
         """appends a value at the end, time is new endtime"""
         assert time > self._time[-1]
-        self._time = numpy.hstack((self._time, time))
-        self._value = numpy.hstack(
+        self._time = np.hstack((self._time, time))
+        self._value = np.hstack(
             (self._value, value)
-        )  # so values must be numpy objects after all ?
+        )  # so values must be np objects after all ?
 
     def insert(self, time: float, value: str) -> None:
         """modifies partition object to include value at time - other times are unchanged"""
         assert not (time == self._time).any(), "this boundary exists already"
-        index = numpy.searchsorted(self._time, numpy.array([time]))[
+        index = np.searchsorted(self._time, np.array([time]))[
             0
         ]  # move _this_ index to the right
-        self._time = numpy.hstack((self._time[:index], time, self._time[index:]))
-        # so values must be numpy objects after all ?
-        self._value = numpy.hstack((self._value[:index], value, self._value[index:]))
+        self._time = np.hstack((self._time[:index], time, self._time[index:]))
+        # so values must be np objects after all ?
+        self._value = np.hstack((self._value[:index], value, self._value[index:]))
 
     def delete_merge_left(self, index):
         # TODO write unittests for me and my other half /
@@ -517,15 +512,15 @@ class Partition(Track):
         """deletes a phoneme, leaves duration as is"""
         assert len(self._value) > 1
         assert 0 <= index < len(self._value)
-        self._time = numpy.hstack((self._time[:index], self._time[index + 1 :]))
-        self._value = numpy.hstack((self._value[:index], self._value[index + 1 :]))
+        self._time = np.hstack((self._time[:index], self._time[index + 1 :]))
+        self._value = np.hstack((self._value[:index], self._value[index + 1 :]))
 
     def delete_merge_right(self, index):
         """deletes a phoneme, leaves duration as is"""
         assert len(self._value) > 1
         assert 0 <= index < len(self._value)
-        self._time = numpy.hstack((self._time[: index + 1], self._time[index + 2 :]))
-        self._value = numpy.hstack((self._value[:index], self._value[index + 1 :]))
+        self._time = np.hstack((self._time[: index + 1], self._time[index + 2 :]))
+        self._value = np.hstack((self._value[:index], self._value[index + 1 :]))
 
     def merge_same(self):  # rename to uniq?
         """return a copy of myself, except identical values will be merged"""
@@ -539,22 +534,20 @@ class Partition(Track):
                     time.append(self._time[i + 1])  # close last one, begin new one
                     value.append(v)
             time.append(self.duration)
-            return Partition(
-                numpy.array(time, dtype=TIME_TYPE), numpy.array(value), self.fs
-            )
+            return Partition(np.array(time, dtype=TIME_TYPE), np.array(value), self.fs)
 
     def time_warp(self, X, Y):
         assert X[0] == 0
         assert Y[0] == 0
         assert X[-1] == self.duration
-        time = numpy.interp(self.time, X, Y).astype(self.time.dtype)
-        # assert len(numpy.where(numpy.diff(time) <= 0)[0]) == 0,\
+        time = np.interp(self.time, X, Y).astype(self.time.dtype)
+        # assert len(np.where(np.diff(time) <= 0)[0]) == 0,\
         #     'some segment durations are non-positive' # Must allow this after all
         # self._time = time
         # may have to remove some collapsed items
         self._time = time
         while 1:
-            index = numpy.where(numpy.diff(self._time) == 0)[0]
+            index = np.where(np.diff(self._time) == 0)[0]
             if len(index):
                 logger.warning(
                     'removing collapsed item #{}: "{}"'.format(
