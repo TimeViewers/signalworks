@@ -7,7 +7,7 @@ from typing import DefaultDict, Optional
 import numpy as np
 from scipy.io.wavfile import read as wav_read
 from scipy.io.wavfile import write as wav_write
-from scipy.signal import resample_poly
+from resampy import resample as rsmpy_resample
 from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger(__name__)
@@ -193,19 +193,10 @@ class Wave(Track):
         return type(self)(value, self.fs)
 
     def resample(self, fs: int) -> "Wave":
-        """resample to a certain fs"""
-
-        if not isinstance(fs, int):
-            logger.error("Resample only supporters integers, ignoring")
+        """resample to a certain fs.  wraps resampy.resample"""
+        if fs == self._fs:
             return self
-
-        if fs != self._fs:
-            if fs > self._fs:  # upsampling
-                return type(self)(resample_poly(self._value, int(fs / self._fs), 1), fs)
-            else:  # downsampling
-                return type(self)(resample_poly(self._value, 1, int(self._fs / fs)), fs)
-        else:
-            return self
+        return type(self)(rsmpy_resample(self._value, self._fs, fs), fs)
 
     def _convert_dtype(self, source, target_dtype):
         """

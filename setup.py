@@ -12,7 +12,7 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-install_requires = ["numpy", "scipy", "numba"]
+install_requires = ["numpy", "scipy", "numba", "resampy"]
 
 extras_require = {
     "test": [
