@@ -45,6 +45,6 @@ setup(
     setup_requires=["pytest-runner"],
     test_suite="tests",
     url="https://github.com/lxkain/signalworks",
-    version="0.3.3",
+    version="0.4.0",
     zip_safe=False,
 )
