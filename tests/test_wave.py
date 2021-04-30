@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 import pytest
+
 from signalworks.tracking import Track, Wave
 
 
@@ -31,7 +33,7 @@ def test_select(var, benchmark):
 def test_resample(benchmark):
     w1 = Wave(value=np.arange(0, 50), fs=1)
     w2 = benchmark(w1.resample, 2)
-    assert w1.value[0] == int(w2.value[0])
+    assert w1.value[0][0] == int(w2.value[0][0])
 
 
 def test_crossfade(benchmark):
@@ -40,4 +42,4 @@ def test_crossfade(benchmark):
     length = 3
     wav = benchmark(wav1.crossfade, wav2, length)
     assert wav1.duration + wav2.duration - length, wav.duration
-    assert np.allclose(wav.value, np.array([1, 1, 3, 5, 7, 10, 10]))
+    assert np.allclose(wav.value.flatten(), np.array([1, 1, 3, 5, 7, 10, 10]))

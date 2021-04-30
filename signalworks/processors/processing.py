@@ -4,6 +4,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
+
 from signalworks.tracking import Partition, TimeValue, Wave
 
 Tracks = Union[Wave, TimeValue, Partition]
@@ -61,7 +62,7 @@ class Processor(metaclass=ABCMeta):
             for name, value in parameters.items():
                 logging.debug(f"Received parameter {name} of value {value}")
         try:
-            for key in parameters.keys():
+            for key in parameters:
                 if type(self.parameters[key]) == np.ndarray:
                     self.parameters[key] = np.fromstring(
                         parameters[key].rstrip(")]").lstrip("[("), sep=" "

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import codecs
 import logging
 import os
@@ -5,6 +6,7 @@ from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
+
 from signalworks.tracking import LabreadError
 from signalworks.tracking.tracking import Track
 
@@ -21,9 +23,7 @@ class Partition(Track):
         assert isinstance(self._time, np.ndarray)
         assert self._time.ndim == 1
         assert self._time.dtype == TIME_TYPE
-        # assert (np.diff(self._time.astype(np.float)) > 0).all(),\
-        #     "times must be strictly monotonically increasing"
-        if not (np.diff(self._time.astype(np.float)) > 0).all():
+        if not (np.diff(self._time.astype(np.float64)) > 0).all():
             logger.warning("Partition: times must be strictly monotonically increasing")
         assert isinstance(self._value, np.ndarray)
         # assert self._value.ndim == 1 # TODO: can I remove this?
@@ -53,9 +53,7 @@ class Partition(Track):
         assert self.check()
 
     def get_time(self):
-        # assert (np.diff(self._time.astype(np.float)) > 0).all(),\
-        # "times must be strictly monotonically increasing" # in case the user messed with .time[index] directly
-        if not (np.diff(self._time.astype(np.float)) > 0).all():
+        if not (np.diff(self._time.astype(np.float64)) > 0).all():
             logger.warning("get_time times must be strictly monotonically increasing")
         return self._time
 

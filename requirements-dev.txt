@@ -1,0 +1,17 @@
+pytest
+pytest-runner
+pytest-benchmark
+pytest-cov
+pytest-xdist
+coverage
+tox
+pre-commit
+mypy
+flake8
+flake8-bugbear
+flake8-comprehensions
+black
+isort
+sphinx
+watchdog
+bump2version

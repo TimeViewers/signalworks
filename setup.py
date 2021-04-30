@@ -15,20 +15,6 @@ with open("HISTORY.rst") as history_file:
 install_requires = ["numpy", "scipy", "numba", "resampy"]
 
 extras_require = {
-    "test": [
-        "pytest",
-        "pytest-runner",
-        "pytest-benchmark",
-        "pytest-cov",
-        "pytest-xdist",
-        "coverage",
-        "tox",
-        "tox-conda",
-        "pre-commit",
-    ],
-    "lint": ["mypy", "flake8", "flake8-bugbear", "flake8-comprehensions"],
-    "style": ["black", "isort"],
-    "docs": ["Sphinx", "watchdog"],
     "label": ["pyedflib", "openxdf"],
     "extended_audio": ["soundfile"],
 }
@@ -59,6 +45,6 @@ setup(
     setup_requires=["pytest-runner"],
     test_suite="tests",
     url="https://github.com/lxkain/signalworks",
-    version="0.3.3",
+    version="0.4.0",
     zip_safe=False,
 )
