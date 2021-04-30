@@ -53,7 +53,6 @@ class Partition(Track):
         assert self.check()
 
     def get_time(self):
-
         if not (np.diff(self._time.astype(np.float64)) > 0).all():
             logger.warning("get_time times must be strictly monotonically increasing")
         return self._time

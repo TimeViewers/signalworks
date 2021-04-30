@@ -9,7 +9,6 @@ import numpy as np
 from resampy import resample as rsmpy_resample
 from scipy.io.wavfile import read as wav_read
 from scipy.io.wavfile import write as wav_write
-
 from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger(__name__)
@@ -50,7 +49,6 @@ class Wave(Track):
             self.path = (Path.home() / str(id)).with_suffix(self.default_suffix)
         else:
             self.path = Path(path).with_suffix(self.default_suffix)
-
         if value.ndim == 1:  # handle case of 1-d array
             value = value[:, np.newaxis]
 
@@ -378,6 +376,7 @@ class Wave(Track):
         ramp = np.linspace(1, 0, length + 2)[1:-1][
             :, np.newaxis
         ]  # don't include 0 and 1
+
         value = self.value.copy()
         value[-length:] = value[-length:] * ramp + wave.value[:length] * (
             1 - ramp

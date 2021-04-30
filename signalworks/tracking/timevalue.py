@@ -2,7 +2,6 @@
 import logging
 import os
 from collections.abc import Iterable
-
 import numpy as np
 
 from signalworks.tracking import Partition
