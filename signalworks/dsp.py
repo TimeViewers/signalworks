@@ -9,6 +9,7 @@ import numba
 import numpy as np
 from numpy.fft import fft, ifft, irfft, rfft
 from scipy import signal, stats
+
 from signalworks.tracking import TimeValue, Wave
 
 logger = logging.getLogger(__name__)
@@ -96,7 +97,7 @@ def frame(wav: Wave, frame_size: float, frame_rate: float) -> TimeValue:
     # print("frame timing...")
     # if 0:  # TODO: unfortunately segment doesn't allow for negative overlap, i.e. jumps
     #     value = segment_talkbox(wav.value, nsize, nsize - nrate)  # because overlap = nsize - nrate
-    value = segment(wav.value, nsize, nrate)
+    value = segment(wav.value[:, -1], nsize, nrate)
     # print(f"frame took time: {time.time() - tic}")
     assert value.shape[1] == nsize
     time = np.array(np.arange(value.shape[0]) * nrate, dtype=np.int64) + nsize // 2

@@ -3,6 +3,7 @@ from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 from scipy import signal
+
 from signalworks.processors.processing import DefaultProgressTracker, Processor
 from signalworks.tracking import Wave
 
@@ -27,22 +28,19 @@ class Filter(Processor):
         assert isinstance(wav, Wave)
         x = wav.value
         self.progressTracker.update(10)
-        y = signal.lfilter(self.parameters["B"], self.parameters["A"], x).astype(
-            x.dtype
-        )
+        y = signal.lfilter(
+            self.parameters["B"], self.parameters["A"], x, axis=0
+        ).astype(x.dtype)
         self.progressTracker.update(90)
-        new_track = (
+        return (
             Wave(
                 y,
                 fs=wav.fs,
-                path=str(
-                    wav.path.with_name(wav.path.stem + "-filtered").with_suffix(
-                        Wave.default_suffix
-                    )
+                path=wav.path.with_name(wav.path.stem + "-filtered").with_suffix(
+                    Wave.default_suffix
                 ),
             ),
         )
-        return new_track
 
 
 class ZeroPhaseFilter(Filter):
@@ -59,19 +57,16 @@ class ZeroPhaseFilter(Filter):
         assert isinstance(wav, Wave)
         x = wav.value
         self.progressTracker.update(10)
-        y = signal.filtfilt(self.parameters["B"], self.parameters["A"], x).astype(
-            x.dtype
-        )
+        y = signal.filtfilt(
+            self.parameters["B"], self.parameters["A"], x, axis=0
+        ).astype(x.dtype)
         self.progressTracker.update(90)
-        assert isinstance(wav, Wave)
         return (
             Wave(
                 y,
                 fs=wav.fs,
-                path=str(
-                    wav.path.with_name(wav.path.stem + "-0phasefiltered").with_suffix(
-                        wav.path.suffix
-                    )
+                path=wav.path.with_name(wav.path.stem + "-0phasefiltered").with_suffix(
+                    wav.path.suffix
                 ),
             ),
         )

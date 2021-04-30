@@ -3,6 +3,7 @@ from typing import Dict, NamedTuple, Optional, Tuple
 
 import numpy as np
 from scipy import signal
+
 from signalworks import dsp, viterbi
 from signalworks.processors.processing import DefaultProgressTracker, Processor
 from signalworks.tracking import Partition, TimeValue, Wave
@@ -53,7 +54,7 @@ class F0Analyzer(Processor):
         assert isinstance(wav, Wave)
         t0_min = int(round(wav.fs / self.parameters["f0_max"]))
         t0_max = int(round(wav.fs / self.parameters["f0_min"]))
-        index = np.arange(t0_min, t0_max + 1, dtype=np.int)
+        index = np.arange(t0_min, t0_max + 1, dtype=np.int16)
         E = R[:, 0]  # energy
         R = R[:, index]  # only look at valid candidates
         # normalize
@@ -71,7 +72,7 @@ class F0Analyzer(Processor):
             (dop > self.parameters["dop threshold"])
             & (E > self.parameters["energy threshold"])
             #  (seq > 0) & (seq < len(index) - 1)
-        ).astype(np.int)
+        ).astype(np.int16)
         v = signal.medfilt(v, 5)  # TODO: replace by a 2-state HMM
         f0[v == 0] = np.nan
         # prepare tracks

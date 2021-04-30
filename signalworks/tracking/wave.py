@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import logging
 import os
 from collections import defaultdict
@@ -5,9 +6,10 @@ from pathlib import Path
 from typing import DefaultDict, Optional
 
 import numpy as np
+from resampy import resample as rsmpy_resample
 from scipy.io.wavfile import read as wav_read
 from scipy.io.wavfile import write as wav_write
-from resampy import resample as rsmpy_resample
+
 from signalworks.tracking.tracking import Track
 
 logger = logging.getLogger(__name__)
@@ -36,7 +38,7 @@ class Wave(Track):
         fs : int
             sample rate of the signal
         duration : Optional[int], optional
-            numer of samples in the signal, typically automatically calculated, by default None
+            number of samples in the signal, typically automatically calculated, by default None
         offset : int, optional
             initial offset of the signal, by default 0
         path : Optional[Path], optional
@@ -48,6 +50,9 @@ class Wave(Track):
             self.path = (Path.home() / str(id)).with_suffix(self.default_suffix)
         else:
             self.path = Path(path).with_suffix(self.default_suffix)
+
+        if value.ndim == 1:  # handle case of 1-d array
+            value = value[:, np.newaxis]
 
         if np.issubdtype(value.dtype, np.integer):
             self.min = np.iinfo(value.dtype).min
@@ -68,8 +73,8 @@ class Wave(Track):
         self._value = value
         self._fs = fs
         self._offset = (
-            offset
-        )  # this is required to support heterogenous fs in multitracks
+            offset  # this is required to support heterogenous fs in multitracks
+        )
         self.type = "Wave"
         self.label = f"amplitude-{value.dtype}"
         if duration is None:
@@ -370,7 +375,9 @@ class Wave(Track):
         assert length > 0
         assert wave.duration >= length
         assert self.duration >= length
-        ramp = np.linspace(1, 0, length + 2)[1:-1]  # don't include 0 and 1
+        ramp = np.linspace(1, 0, length + 2)[1:-1][
+            :, np.newaxis
+        ]  # don't include 0 and 1
         value = self.value.copy()
         value[-length:] = value[-length:] * ramp + wave.value[:length] * (
             1 - ramp
@@ -386,6 +393,6 @@ class Wave(Track):
         )
         time = np.arange(len(self._value))
         # time = index / self._fs
-        time = np.round(np.interp(time, x, y)).astype(np.int)
+        time = np.round(np.interp(time, x, y)).astype(np.int16)
         # index = int(time * self.fs)
         self._value = self._value[time]

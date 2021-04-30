@@ -51,7 +51,7 @@ def load_audio(
             raise MultiChannelError(
                 f"cannot select channel {channel} from monaural file {path}"
             )
-        multiTrack[channel_names[0]] = Wave(value, fs, path=path)
+        multiTrack[channel_names[0]] = Wave(value[:, np.newaxis], fs, path=path)
     if value.ndim == 2:
 
         if channel is None:
